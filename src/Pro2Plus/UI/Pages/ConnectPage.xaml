@@ -1,0 +1,230 @@
+<UserControl x:Class="Pro2Plus.UI.Pages.ConnectPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:Pro2Plus.UI"
+             Width="1060" Height="840" Background="Transparent"
+             FontFamily="Microsoft YaHei UI"
+             UseLayoutRounding="True" SnapsToDevicePixels="True">
+    <Canvas Width="1060" Height="840">
+
+        <!-- ═══════ 状态卡 470×176 @ (240,104) ═══════ -->
+        <ContentControl Style="{StaticResource CardHero}" Canvas.Left="240" Canvas.Top="104" Width="470" Height="176">
+            <Canvas>
+                <Ellipse Canvas.Left="24" Canvas.Top="47" Width="10" Height="10" Fill="{Binding LinkDotBrush}"/>
+                <TextBlock Canvas.Left="44" Canvas.Top="32" Text="{Binding LinkTitle}" FontSize="24" FontWeight="Bold"
+                           LineHeight="32" Foreground="{StaticResource T1}" Width="260"/>
+
+                <Button Canvas.Left="338" Canvas.Top="34" Width="108" Height="36"
+                        Content="{Binding LinkConnectText}" Style="{StaticResource PrimaryButton}"
+                        Command="{Binding ConnectLinkCommand}"
+                        IsEnabled="{Binding LinkCanConnect}"/>
+                <Button Canvas.Left="338" Canvas.Top="92" Width="108" Height="30"
+                        Content="重新检测" Style="{StaticResource GhostButton}"
+                        Command="{Binding RescanLinkCommand}" IsEnabled="{Binding LinkCanConnect}"/>
+
+                <TextBlock Canvas.Left="24" Canvas.Top="90" Text="{Binding LinkDetail}" FontSize="12"
+                           LineHeight="19" Foreground="{StaticResource T2}" Width="290" TextTrimming="CharacterEllipsis"
+                           ToolTip="{Binding LinkDetail}"/>
+                <TextBlock Canvas.Left="24" Canvas.Top="111" Text="{Binding LinkDetailSecondary}" FontSize="12"
+                           LineHeight="19" Foreground="{StaticResource T4}" Width="290"/>
+            </Canvas>
+        </ContentControl>
+
+        <!-- ═══════ 指标卡 302×82 ×2 @ (726,104) / (726,198) ═══════ -->
+        <ContentControl Style="{StaticResource CardStat}" Canvas.Left="726" Canvas.Top="104" Width="302" Height="82">
+            <Canvas>
+                <TextBlock Canvas.Left="22" Canvas.Top="13" Text="回报率" FontSize="11.5"
+                           Foreground="{StaticResource T3}" LineHeight="18" Width="120"/>
+                <TextBlock Canvas.Left="256" Canvas.Top="13" Text="Hz" FontSize="11"
+                           Foreground="{StaticResource T4}" LineHeight="18" Width="24" TextAlignment="Right"/>
+                <TextBlock Canvas.Left="22" Canvas.Top="29" Text="{Binding LinkRateText}"
+                           FontSize="28" FontWeight="Bold" Foreground="{StaticResource T1}" Opacity="0.72"
+                           LineHeight="36" Width="150"/>
+                <!-- 信号阶梯 glyph -->
+                <Canvas Canvas.Left="254" Canvas.Top="42" Width="26" Height="26" Opacity="0.85">
+                    <Rectangle Canvas.Left="0"  Canvas.Bottom="3" Width="3.4" Height="6"  Fill="{StaticResource T4}" RadiusX="1" RadiusY="1"/>
+                    <Rectangle Canvas.Left="6"  Canvas.Bottom="3" Width="3.4" Height="10" Fill="{StaticResource T4}" RadiusX="1" RadiusY="1"/>
+                    <Rectangle Canvas.Left="12" Canvas.Bottom="3" Width="3.4" Height="15" Fill="{StaticResource T4}" RadiusX="1" RadiusY="1"/>
+                    <Rectangle Canvas.Left="18" Canvas.Bottom="3" Width="3.4" Height="21" Fill="{StaticResource T4}" RadiusX="1" RadiusY="1"/>
+                </Canvas>
+            </Canvas>
+        </ContentControl>
+
+        <ContentControl Style="{StaticResource CardStat}" Canvas.Left="726" Canvas.Top="198" Width="302" Height="82">
+            <Canvas>
+                <TextBlock Canvas.Left="22" Canvas.Top="13" Text="电量" FontSize="11.5"
+                           Foreground="{StaticResource T3}" LineHeight="18" Width="120"/>
+                <TextBlock Canvas.Left="256" Canvas.Top="13" Text="%" FontSize="11"
+                           Foreground="{StaticResource T4}" LineHeight="18" Width="24" TextAlignment="Right"/>
+                <TextBlock Canvas.Left="22" Canvas.Top="29" Text="{Binding LinkBatteryText}"
+                           FontSize="28" FontWeight="Bold" Foreground="{StaticResource T1}" Opacity="0.72"
+                           LineHeight="36" Width="150"/>
+                <!-- 电池 glyph -->
+                <Canvas Canvas.Left="254" Canvas.Top="42" Width="26" Height="26" Opacity="0.85">
+                    <Rectangle Canvas.Left="1.5" Canvas.Top="7" Width="19" Height="12" RadiusX="3.4" RadiusY="3.4"
+                               Stroke="{StaticResource T4}" StrokeThickness="1.6" Fill="Transparent"/>
+                    <Rectangle Canvas.Left="4" Canvas.Top="9.5" Width="6" Height="7" RadiusX="1.8" RadiusY="1.8"
+                               Fill="{StaticResource T4}" Opacity="0.55"/>
+                    <Line X1="23" Y1="11" X2="23" Y2="15" Stroke="{StaticResource T4}" StrokeThickness="2.2"/>
+                </Canvas>
+            </Canvas>
+        </ContentControl>
+
+        <!-- ═══════ 模式选择 ═══════ -->
+        <TextBlock Canvas.Left="240" Canvas.Top="317" Text="模式选择" FontSize="13"
+                   Foreground="{StaticResource T3}" LineHeight="18" Width="130"/>
+        <Rectangle Canvas.Left="330" Canvas.Top="328" Width="698" Height="1" Fill="#0EFFFFFF"/>
+
+        <!-- Pro1 @ (240,356) -->
+        <Grid Canvas.Left="240" Canvas.Top="356" Width="386" Height="140">
+            <ContentControl Style="{StaticResource CardMode}" Width="386" Height="140"
+                            Visibility="{Binding IsPro1Selected, Converter={StaticResource BoolVis}, ConverterParameter=invert}"/>
+            <ContentControl Style="{StaticResource CardModeOn}" Width="386" Height="140"
+                            Visibility="{Binding IsPro1Selected, Converter={StaticResource BoolVis}}"/>
+            <ui:DebossIcon Width="116" Height="116" Margin="202,14,0,0"
+                           HorizontalAlignment="Left" VerticalAlignment="Top"
+                           Geometry="{StaticResource GeoSwitch}" MarkOpacity="0.18"/>
+            <Grid Width="24" Height="24" Margin="338,58,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                  Visibility="{Binding IsPro1Selected, Converter={StaticResource BoolVis}}">
+                <Ellipse Fill="{StaticResource Accent}"/>
+                <Ellipse Width="6" Height="6" Fill="{StaticResource Ink}"/>
+            </Grid>
+            <Ellipse Width="24" Height="24" Margin="338,58,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                     Stroke="#2EFFFFFF" StrokeThickness="1"
+                     Visibility="{Binding IsPro1Selected, Converter={StaticResource BoolVis}, ConverterParameter=invert}"/>
+            <TextBlock Text="Pro1" Margin="24,50,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                   IsHitTestVisible="False" FontSize="22" LineHeight="32" Width="200">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{StaticResource T2}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsPro1Selected}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource T1}"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+            <Button Command="{Binding SelectCompactModeCommand}" CommandParameter="Pro1" Cursor="Hand">
+                <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate></Button.Template>
+            </Button>
+        </Grid>
+
+        <!-- Xbox @ (642,356) -->
+        <Grid Canvas.Left="642" Canvas.Top="356" Width="386" Height="140">
+            <ContentControl Style="{StaticResource CardMode}" Width="386" Height="140"
+                            Visibility="{Binding IsXboxSelected, Converter={StaticResource BoolVis}, ConverterParameter=invert}"/>
+            <ContentControl Style="{StaticResource CardModeOn}" Width="386" Height="140"
+                            Visibility="{Binding IsXboxSelected, Converter={StaticResource BoolVis}}"/>
+            <ui:DebossIcon Width="116" Height="116" Margin="202,14,0,0"
+                           HorizontalAlignment="Left" VerticalAlignment="Top"
+                           Geometry="{StaticResource GeoXbox}" MarkOpacity="0.15"/>
+            <Grid Width="24" Height="24" Margin="338,58,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                  Visibility="{Binding IsXboxSelected, Converter={StaticResource BoolVis}}">
+                <Ellipse Fill="{StaticResource Accent}"/>
+                <Ellipse Width="6" Height="6" Fill="{StaticResource Ink}"/>
+            </Grid>
+            <Ellipse Width="24" Height="24" Margin="338,58,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                     Stroke="#2EFFFFFF" StrokeThickness="1"
+                     Visibility="{Binding IsXboxSelected, Converter={StaticResource BoolVis}, ConverterParameter=invert}"/>
+            <TextBlock Text="Xbox" Margin="24,50,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                   IsHitTestVisible="False" FontSize="22" LineHeight="32" Width="200">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{StaticResource T2}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsXboxSelected}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource T1}"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+            <Button Command="{Binding SelectCompactModeCommand}" CommandParameter="Xbox" Cursor="Hand">
+                <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate></Button.Template>
+            </Button>
+        </Grid>
+
+        <!-- PS5 @ (240,512) -->
+        <Grid Canvas.Left="240" Canvas.Top="512" Width="386" Height="140">
+            <ContentControl Style="{StaticResource CardMode}" Width="386" Height="140"
+                            Visibility="{Binding CompactPs5Selected, Converter={StaticResource BoolVis}, ConverterParameter=invert}"/>
+            <ContentControl Style="{StaticResource CardModeOn}" Width="386" Height="140"
+                            Visibility="{Binding CompactPs5Selected, Converter={StaticResource BoolVis}}"/>
+            <ui:DebossIcon Width="116" Height="116" Margin="202,14,0,0"
+                           HorizontalAlignment="Left" VerticalAlignment="Top"
+                           Geometry="{StaticResource GeoPs}" MarkOpacity="0.15"/>
+            <Grid Width="24" Height="24" Margin="338,58,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                  Visibility="{Binding CompactPs5Selected, Converter={StaticResource BoolVis}}">
+                <Ellipse Fill="{StaticResource Accent}"/>
+                <Ellipse Width="6" Height="6" Fill="{StaticResource Ink}"/>
+            </Grid>
+            <Ellipse Width="24" Height="24" Margin="338,58,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                     Stroke="#2EFFFFFF" StrokeThickness="1"
+                     Visibility="{Binding CompactPs5Selected, Converter={StaticResource BoolVis}, ConverterParameter=invert}"/>
+            <TextBlock Text="PS5" Margin="24,50,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                   IsHitTestVisible="False" FontSize="22" LineHeight="32" Width="200">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{StaticResource T2}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CompactPs5Selected}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource T1}"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+            <Button Command="{Binding SelectCompactModeCommand}" CommandParameter="PS5" Cursor="Hand">
+                <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate></Button.Template>
+            </Button>
+        </Grid>
+
+        <!-- 键鼠 @ (642,512)：键盘 + 鼠标双剪影 -->
+        <Grid Canvas.Left="642" Canvas.Top="512" Width="386" Height="140">
+            <ContentControl Style="{StaticResource CardMode}" Width="386" Height="140"
+                            Visibility="{Binding IsKeyMouseSelected, Converter={StaticResource BoolVis}, ConverterParameter=invert}"/>
+            <ContentControl Style="{StaticResource CardModeOn}" Width="386" Height="140"
+                            Visibility="{Binding IsKeyMouseSelected, Converter={StaticResource BoolVis}}"/>
+            <ui:DebossIcon Width="78" Height="78" Margin="200,32,0,0"
+                           HorizontalAlignment="Left" VerticalAlignment="Top"
+                           Geometry="{StaticResource GeoKeyboard}" MarkOpacity="0.22"/>
+            <ui:DebossIcon Width="42" Height="42" Margin="282,56,0,0"
+                           HorizontalAlignment="Left" VerticalAlignment="Top"
+                           Geometry="{StaticResource GeoMouse}" MarkOpacity="0.22"/>
+            <Grid Width="24" Height="24" Margin="338,58,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                  Visibility="{Binding IsKeyMouseSelected, Converter={StaticResource BoolVis}}">
+                <Ellipse Fill="{StaticResource Accent}"/>
+                <Ellipse Width="6" Height="6" Fill="{StaticResource Ink}"/>
+            </Grid>
+            <Ellipse Width="24" Height="24" Margin="338,58,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                     Stroke="#2EFFFFFF" StrokeThickness="1"
+                     Visibility="{Binding IsKeyMouseSelected, Converter={StaticResource BoolVis}, ConverterParameter=invert}"/>
+            <TextBlock Text="键鼠" Margin="24,50,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                   IsHitTestVisible="False" FontSize="22" LineHeight="32" Width="200">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{StaticResource T2}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsKeyMouseSelected}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource T1}"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+            <Button Command="{Binding SelectCompactModeCommand}" CommandParameter="Kbm" Cursor="Hand">
+                <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate></Button.Template>
+            </Button>
+        </Grid>
+
+        <!-- ═══════ 底部操作 @ (924,700) ═══════ -->
+        <Button Canvas.Left="924" Canvas.Top="700" Width="104" Height="34" Content="打开日志"
+                Style="{StaticResource GhostStrongButton}" Click="OpenLog_Click"/>
+
+    </Canvas>
+</UserControl>

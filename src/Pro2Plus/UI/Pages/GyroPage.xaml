@@ -1,0 +1,161 @@
+<UserControl x:Class="Pro2Plus.UI.Pages.GyroPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:Pro2Plus.UI"
+             Width="1060" Height="840" Background="Transparent"
+             FontFamily="Microsoft YaHei UI"
+             UseLayoutRounding="True" SnapsToDevicePixels="True">
+    <Canvas Width="1060" Height="840">
+
+        <!-- ═══════ 陀螺仪灵敏度 386×440 @ (240,104)；展开高级设置时压到 320 ═══════ -->
+        <ContentControl x:Name="CardGyro" Style="{StaticResource CardControl}"
+                        Canvas.Left="240" Canvas.Top="104" Width="386" Height="440">
+            <Canvas>
+                <TextBlock Canvas.Left="24" Canvas.Top="22" Text="陀螺仪灵敏度倍率" FontSize="11.5"
+                           Foreground="{StaticResource T3}" LineHeight="18"/>
+                <TextBlock Canvas.Left="24" Canvas.Top="40" Text="{Binding SensitivityScale, StringFormat=F2}"
+                           FontSize="56" FontWeight="Bold" LineHeight="66" Foreground="{StaticResource T1}" Width="240"/>
+                <TextBlock Canvas.Left="150" Canvas.Top="64" Text="×" FontSize="20"
+                           Foreground="{StaticResource T4}" LineHeight="26" Width="60"/>
+
+                <ui:DebossIcon x:Name="MarkGyro" Canvas.Left="172" Canvas.Top="56" Width="170" Height="170" Opacity="0.78"
+                               Geometry="{StaticResource GeoGyro}" StrokeWidth="10" MarkOpacity="0.15"/>
+
+                <Slider x:Name="SliderGyro" Canvas.Left="24" Canvas.Top="291" Width="338" Height="26"
+                        Style="{StaticResource SliderThick}" Minimum="0.25" Maximum="4.0"
+                        Value="{Binding SensitivityScale, Mode=TwoWay}"/>
+                <TextBlock x:Name="TickGyro1" Canvas.Left="24" Canvas.Top="320" Text="0.1×" FontSize="10.5" Foreground="{StaticResource T4}" Width="44"/>
+                <TextBlock x:Name="TickGyro2" Canvas.Left="171" Canvas.Top="320" Text="2.5×" FontSize="10.5" Foreground="{StaticResource T4}"
+                           Width="44" TextAlignment="Center"/>
+                <TextBlock x:Name="TickGyro3" Canvas.Left="318" Canvas.Top="320" Text="5.0×" FontSize="10.5" Foreground="{StaticResource T4}"
+                           Width="44" TextAlignment="Right"/>
+
+                <Button x:Name="BtnGyroReset" Canvas.Left="24" Canvas.Top="376" Width="132" Height="32" Content="重置为 1.00×"
+                        Style="{StaticResource GhostButton}" Command="{Binding ResetSensitivityCommand}"/>
+            </Canvas>
+        </ContentControl>
+
+        <!-- ═══════ 震动强度 386×440 @ (642,104) ═══════ -->
+        <ContentControl x:Name="CardVibe" Style="{StaticResource CardControl}"
+                        Canvas.Left="642" Canvas.Top="104" Width="386" Height="440">
+            <Canvas>
+                <TextBlock Canvas.Left="24" Canvas.Top="22" Text="震动强度" FontSize="11.5"
+                           Foreground="{StaticResource T3}" LineHeight="18"/>
+                <!-- 数字与单位用 StackPanel 排版，三位数时 % 自动右移，不会被数字盖住 -->
+                <StackPanel Canvas.Left="24" Canvas.Top="40" Orientation="Horizontal">
+                    <TextBlock Text="{Binding RumblePercent, StringFormat=F0}" FontSize="56" FontWeight="Bold"
+                               LineHeight="66" Foreground="{StaticResource T1}"/>
+                    <TextBlock Text="%" FontSize="20" Foreground="{StaticResource T4}"
+                               LineHeight="26" Margin="6,22,0,0"/>
+                </StackPanel>
+
+                <ui:DebossIcon x:Name="MarkVibe" Canvas.Left="172" Canvas.Top="56" Width="170" Height="170" Opacity="0.78"
+                               Geometry="{StaticResource GeoVibe}" StrokeWidth="10" MarkOpacity="0.15"/>
+
+                <Slider x:Name="SliderVibe" Canvas.Left="24" Canvas.Top="291" Width="338" Height="26"
+                        Style="{StaticResource SliderThick}" Minimum="0" Maximum="200"
+                        Value="{Binding RumblePercent, Mode=TwoWay}"/>
+                <TextBlock x:Name="TickVibe1" Canvas.Left="24" Canvas.Top="320" Text="0" FontSize="10.5" Foreground="{StaticResource T4}" Width="44"/>
+                <TextBlock x:Name="TickVibe2" Canvas.Left="86" Canvas.Top="320" Text="50" FontSize="10.5" Foreground="{StaticResource T4}"
+                           Width="44" TextAlignment="Center"/>
+                <TextBlock x:Name="TickVibe3" Canvas.Left="171" Canvas.Top="320" Text="100" FontSize="10.5" Foreground="{StaticResource T4}"
+                           Width="44" TextAlignment="Center"/>
+                <TextBlock x:Name="TickVibe4" Canvas.Left="255" Canvas.Top="320" Text="150" FontSize="10.5" Foreground="{StaticResource T4}"
+                           Width="44" TextAlignment="Center"/>
+                <TextBlock x:Name="TickVibe5" Canvas.Left="318" Canvas.Top="320" Text="200" FontSize="10.5" Foreground="{StaticResource T4}"
+                           Width="44" TextAlignment="Right"/>
+
+                <Button x:Name="BtnVibeTry" Canvas.Left="24" Canvas.Top="376" Width="92" Height="32" Content="试一下"
+                        Style="{StaticResource GhostButton}" Command="{Binding TestRumbleCommand}"/>
+            </Canvas>
+        </ContentControl>
+
+        <!-- ═══════ 高级设置（折叠）788×88 @ (240,568) ═══════ -->
+        <ContentControl x:Name="AdvancedBar" Style="{StaticResource CardAdv}" Canvas.Left="240" Canvas.Top="568" Width="788" Height="88">
+            <Canvas>
+                <TextBlock Canvas.Left="24" Canvas.Top="30" Text="高级设置" FontSize="15" FontWeight="Bold"
+                           LineHeight="22" Foreground="{StaticResource T1}" Width="260"/>
+                <TextBlock Canvas.Left="444" Canvas.Top="23" Text="{Binding GyroTuningSummary}"
+                           FontSize="11.5" Foreground="{StaticResource T4}" LineHeight="18"
+                           Width="280" TextAlignment="Right"/>
+                <!-- 折叠态：内容向上顶出，箭头朝上 -->
+                <Path x:Name="BarChevron" Canvas.Left="744" Canvas.Top="34" Data="M5 13 L10 8 L15 13" Stroke="#80FFFFFF"
+                      StrokeThickness="1.6" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                      RenderTransformOrigin="0.5,0.5">
+                    <Path.RenderTransform>
+                        <RotateTransform x:Name="BarChevronRotate" Angle="0"/>
+                    </Path.RenderTransform>
+                </Path>
+                <Button Canvas.Left="0" Canvas.Top="0" Width="788" Height="88" Click="Advanced_Click" Cursor="Hand">
+                    <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate></Button.Template>
+                </Button>
+            </Canvas>
+        </ContentControl>
+
+        <!-- ═══════ 高级设置（展开，内联）788×228 @ (240,448)，按 Figma 03b 精确坐标 ═══════ -->
+        <ContentControl x:Name="AdvancedCard" Style="{StaticResource CardAdv}"
+                        Canvas.Left="240" Canvas.Top="448" Width="788" Height="228" Visibility="Collapsed">
+            <Canvas>
+                <TextBlock Canvas.Left="24" Canvas.Top="22" Text="高级设置" FontSize="15" FontWeight="Bold"
+                           LineHeight="22" Foreground="{StaticResource T1}" Width="280"/>
+                <!-- 展开态：箭头朝下表示收起 -->
+                <Path x:Name="CardChevron" Canvas.Left="744" Canvas.Top="28" Data="M5 8 L10 13 L15 8" Stroke="#80FFFFFF"
+                      StrokeThickness="1.6" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                      RenderTransformOrigin="0.5,0.5">
+                    <Path.RenderTransform>
+                        <RotateTransform x:Name="CardChevronRotate" Angle="0"/>
+                    </Path.RenderTransform>
+                </Path>
+                <Button Canvas.Left="732" Canvas.Top="14" Width="40" Height="34" Click="AdvancedClose_Click" Cursor="Hand"
+                        Background="Transparent" BorderThickness="0">
+                    <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate></Button.Template>
+                </Button>
+
+                <Rectangle Canvas.Left="24" Canvas.Top="60" Width="740" Height="1" Fill="#0EFFFFFF"/>
+
+                <!-- 第一行：满速 / 水平 / 竖直（文字与输入框同一基线） -->
+                <TextBlock Canvas.Left="24" Canvas.Top="86" Text="满速 DPS" FontSize="12.5" Foreground="{StaticResource T3}"/>
+                <TextBox Canvas.Left="118" Canvas.Top="80" Width="104" Style="{StaticResource NumBox}"
+                         ToolTip="算法字段 full_speed_dps · 范围 20–360，单位 °/s"
+                         Text="{Binding GyroFullSpeedDps, StringFormat=F0}"/>
+                <TextBlock Canvas.Left="272" Canvas.Top="86" Text="水平倍率" FontSize="12.5" Foreground="{StaticResource T3}"/>
+                <TextBox Canvas.Left="366" Canvas.Top="80" Width="90" Style="{StaticResource NumBox}"
+                         ToolTip="算法字段 scale_yaw · 范围 0.1–5.0，偏航轴输出缩放"
+                         Text="{Binding GyroScaleYaw, StringFormat=F2}"/>
+                <TextBlock Canvas.Left="480" Canvas.Top="86" Text="竖直倍率" FontSize="12.5" Foreground="{StaticResource T3}"/>
+                <TextBox Canvas.Left="574" Canvas.Top="80" Width="90" Style="{StaticResource NumBox}"
+                         ToolTip="算法字段 scale_pitch · 范围 0.1–5.0，俯仰轴输出缩放"
+                         Text="{Binding GyroScalePitch, StringFormat=F2}"/>
+
+                <Rectangle Canvas.Left="24" Canvas.Top="134" Width="740" Height="1" Fill="#0EFFFFFF"/>
+
+                <!-- 第二行：下压 / 死区 / 开关 -->
+                <TextBlock Canvas.Left="24" Canvas.Top="162" Text="下压倍率" FontSize="12.5" Foreground="{StaticResource T3}"/>
+                <TextBox Canvas.Left="118" Canvas.Top="156" Width="104" Style="{StaticResource NumBox}"
+                         ToolTip="算法字段 scale_pitch_down · 范围 0.1–5.0，只作用于向下转动"
+                         Text="{Binding GyroScalePitchDown, StringFormat=F2}"/>
+                <TextBlock Canvas.Left="272" Canvas.Top="162" Text="右摇杆死区" FontSize="12.5" Foreground="{StaticResource T3}"/>
+                <TextBox Canvas.Left="366" Canvas.Top="156" Width="90" Style="{StaticResource NumBox}"
+                         ToolTip="算法字段 right_stick_deadzone · 范围 0–0.3"
+                         Text="{Binding GyroRightStickDeadzone, StringFormat=F3}"/>
+                <TextBlock Canvas.Left="480" Canvas.Top="162" Text="陀螺仪开关" FontSize="12.5" Foreground="{StaticResource T3}"/>
+                <!-- 开关键固定为 C，不可编辑、不可选中 -->
+                <Border Canvas.Left="574" Canvas.Top="156" Width="90" Height="26" CornerRadius="5"
+                        Background="#12FFFFFF" BorderBrush="#1AFFFFFF" BorderThickness="1" IsHitTestVisible="False">
+                    <TextBlock Text="{Binding GyroToggleButton}" FontSize="12.5" Foreground="{StaticResource T3}"
+                               VerticalAlignment="Center" HorizontalAlignment="Left" Margin="8,0,0,0"/>
+                </Border>
+
+                <TextBlock Canvas.Left="24" Canvas.Top="196" FontSize="10" Foreground="{StaticResource T4}"
+                           Text="满速为陀螺仪打满时对应的角速度，数值越大越灵敏；下压倍率只作用于向下转动；轻按手柄上的 C 键可开关陀螺仪右摇杆映射。"/>
+            </Canvas>
+        </ContentControl>
+
+        <!-- ═══════ 底部操作 ═══════ -->
+        <Button Canvas.Left="772" Canvas.Top="700" Width="116" Height="34" Content="恢复默认"
+                Style="{StaticResource GhostButton}" Command="{Binding ResetGyroTuningCommand}"/>
+        <Button Canvas.Left="896" Canvas.Top="700" Width="132" Height="34" Content="保存并应用"
+                Style="{StaticResource PrimaryButton}" Command="{Binding SaveTuningCommand}"/>
+
+    </Canvas>
+</UserControl>

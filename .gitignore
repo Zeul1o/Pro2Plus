@@ -1,0 +1,35 @@
+# 构建产物
+bin/
+obj/
+dist/
+artifacts/
+publish/
+publish_*/
+out_publish/
+src/Pro2Plus.En/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# 备份与临时
+*.bak
+*.bak_*
+*.tmp
+*.log
+*.pdb
+*.ilk
+
+# 第三方二进制（见 README）
+tools/viiper/**/*.exe
+tools/usbip-win2/**/*.exe
+src/Pro2Plus/Assets/GameGlyphs/
+
+# 系统
+Thumbs.db
+desktop.ini
+.DS_Store

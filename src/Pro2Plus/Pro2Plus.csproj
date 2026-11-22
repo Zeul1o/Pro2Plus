@@ -1,0 +1,77 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.26100.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Pro2Plus</AssemblyName>
+    <AssemblyTitle>Pro2+</AssemblyTitle>
+    <Product>Pro2+</Product>
+    <Description>适用于 Windows 10 / 11 x64 的 Pro2 纯软件手柄助手，支持 Pro2、Pro1、Xbox 与 PS5 兼容模式</Description>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <InformationalVersion>1.0.0</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <!-- 只带中英文资源，其余 40 多种语言的卫星程序集不进包 -->
+    <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj\**;artifacts\**</DefaultItemExcludes>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+    <PureSoftwareRelease Condition="'$(PureSoftwareRelease)' == ''">false</PureSoftwareRelease>
+    <CompatibilityRendering Condition="'$(CompatibilityRendering)' == ''">false</CompatibilityRendering>
+    <!-- 只发一个 exe：把 33MB 的 USBip 驱动安装包一起嵌进来，下载即用（首次运行自解压安装）。
+         想瘦身测试可加 -p:EmbedUsbipInstaller=false，那时需要 exe 同级放 usbip-win2\v0.9.7.7\。 -->
+    <EmbedUsbipInstaller Condition="'$(EmbedUsbipInstaller)' == ''">true</EmbedUsbipInstaller>
+    <ViiperBinaryPath Condition="'$(ViiperBinaryPath)' == ''">..\..\tools\viiper\haptic-v0.8.0\viiper-haptic-v2.8.exe</ViiperBinaryPath>
+    <UsbipInstallerPath Condition="'$(UsbipInstallerPath)' == ''">..\..\tools\usbip-win2\v0.9.7.7\USBip-0.9.7.7-x64.exe</UsbipInstallerPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(PureSoftwareRelease)' == 'true'">
+    <DefineConstants>$(DefineConstants);PURE_SOFTWARE_RELEASE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(CompatibilityRendering)' == 'true'">
+    <DefineConstants>$(DefineConstants);PRO2_COMPATIBILITY_RENDERING</DefineConstants>
+    <InformationalVersion>1.0.0-ui-compatible</InformationalVersion>
+    <AssemblyTitle>Pro2+ · 兼容启动版</AssemblyTitle>
+    <Product>Pro2+ · 兼容启动版</Product>
+  </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="Assets\AppIcon.ico" />
+    <Resource Include="Assets\AppIcon.png" />
+    <Resource Include="Assets\Handhelds\switch_pro.png" />
+    <Resource Include="Assets\Handhelds\xbox.png" />
+    <Resource Include="Assets\Handhelds\ps5.png" />
+    <Resource Include="Assets\Highlights\*.png" />
+    <Resource Include="Assets\InputPrompts\pad\*.png" />
+    <Resource Include="Assets\InputPrompts\key\*.png" />
+    <Resource Include="Assets\InputPrompts\mouse\*.png" />
+    <!-- Figma 原生渲染的光场 / 抖动噪点：一比一还原玻璃与光效质感 -->
+    <Resource Include="Assets\Light\LightA.png" />
+    <Resource Include="Assets\Light\LightB.png" />
+    <Resource Include="Assets\Light\Noise.png" />
+    <EmbeddedResource Include="$(ViiperBinaryPath)" LogicalName="Embedded.viiper.haptic.exe" />
+    <EmbeddedResource Include="..\..\tools\viiper\haptic-v0.8.0\LICENSE.txt" LogicalName="Embedded.viiper.haptic.license" />
+    <EmbeddedResource Include="$(UsbipInstallerPath)" LogicalName="Embedded.usbip.installer"
+                      Condition="'$(EmbedUsbipInstaller)' == 'true'" />
+    <EmbeddedResource Include="..\..\tools\usbip-win2\v0.9.7.7\LICENSE.txt" LogicalName="Embedded.usbip.license"
+                      Condition="'$(EmbedUsbipInstaller)' == 'true'" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- 有线 Pro2（057E:2069）直读依赖 libusb-1.0，必须是 x64。
+         System32 里那份是 32 位，加载会 BadImageFormatException，所以随包带一份。
+         单文件发布不会把 Content 复制到 publish 目录，用下面的 Target 显式拷。 -->
+    <None Include="native\libusb-1.0.dll" Link="libusb-1.0.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="CopyLibusbNextToExe" AfterTargets="Publish">
+    <Copy SourceFiles="native\libusb-1.0.dll" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>
+
+

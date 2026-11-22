@@ -1,0 +1,739 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ui="clr-namespace:Pro2Plus.UI">
+
+    <!-- ══════════════ 设计 token（与 Figma lib2.js 一致）══════════════ -->
+    <Color x:Key="PageColor">#08090C</Color>
+    <SolidColorBrush x:Key="PageBrush" Color="#08090C"/>
+    <SolidColorBrush x:Key="T1" Color="#F7F9FB"/>
+    <SolidColorBrush x:Key="T2" Color="#B2BBC4"/>
+    <SolidColorBrush x:Key="T3" Color="#8C959E"/>
+    <SolidColorBrush x:Key="T4" Color="#6B747D"/>
+    <SolidColorBrush x:Key="Accent" Color="#5C9CFF"/>
+    <SolidColorBrush x:Key="AccentInk" Color="#C9DDFF"/>
+    <SolidColorBrush x:Key="Ink" Color="#07101E"/>
+    <SolidColorBrush x:Key="Ok" Color="#5FD39B"/>
+    <SolidColorBrush x:Key="InkMark" Color="#A6BEDA"/>
+
+    <!-- ══════════════ 环境光（按设计稿预览逐点采样还原）══════════════
+         上主光 #142454 / 左下淡青 #131E22 / 右下淡紫 #252038 / 中下近黑 #0A0A10 -->
+    <RadialGradientBrush x:Key="GlowMain" Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#702B5CE6" Offset="0"/>
+        <GradientStop Color="#662B5CE6" Offset="0.28"/>
+        <GradientStop Color="#432B5CE6" Offset="0.50"/>
+        <GradientStop Color="#1F2B5CE6" Offset="0.70"/>
+        <GradientStop Color="#002B5CE6" Offset="1"/>
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="GlowViolet" Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#2A8A6AE0" Offset="0"/>
+        <GradientStop Color="#1E8A6AE0" Offset="0.35"/>
+        <GradientStop Color="#0A8A6AE0" Offset="0.68"/>
+        <GradientStop Color="#008A6AE0" Offset="1"/>
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="GlowTeal" Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#171FB6C9" Offset="0"/>
+        <GradientStop Color="#101FB6C9" Offset="0.45"/>
+        <GradientStop Color="#001FB6C9" Offset="1"/>
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="GlowBase" Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+        <GradientStop Color="#033A66DE" Offset="0"/>
+        <GradientStop Color="#003A66DE" Offset="1"/>
+    </RadialGradientBrush>
+
+    <!-- ══════════════ 顶部高光 sheen（1px，中间亮两端透明）══════════════ -->
+    <LinearGradientBrush x:Key="Sheen11" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#00FFFFFF" Offset="0"/><GradientStop Color="#1CFFFFFF" Offset="0.45"/><GradientStop Color="#00FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="Sheen13" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#00FFFFFF" Offset="0"/><GradientStop Color="#21FFFFFF" Offset="0.45"/><GradientStop Color="#00FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="Sheen15" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#00FFFFFF" Offset="0"/><GradientStop Color="#26FFFFFF" Offset="0.45"/><GradientStop Color="#00FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="Sheen16" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#00FFFFFF" Offset="0"/><GradientStop Color="#29FFFFFF" Offset="0.45"/><GradientStop Color="#00FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="Sheen20" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#00FFFFFF" Offset="0"/><GradientStop Color="#33FFFFFF" Offset="0.45"/><GradientStop Color="#00FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="Sheen26" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#00FFFFFF" Offset="0"/><GradientStop Color="#42FFFFFF" Offset="0.45"/><GradientStop Color="#00FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="Sheen28" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#00FFFFFF" Offset="0"/><GradientStop Color="#47FFFFFF" Offset="0.45"/><GradientStop Color="#00FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="Sheen50" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#00FFFFFF" Offset="0"/><GradientStop Color="#80FFFFFF" Offset="0.45"/><GradientStop Color="#00FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- ══════════════ 卡面垂直渐变（顶亮底暗）══════════════
+         数值直接取自 Figma 审计：状态卡 #FFFFFF 0.072→0.12；模式卡 0.032→0.072；
+         统计卡与内嵌块按同一套比例递减。偏移 0 = 底边，1 = 顶边。 -->
+    <LinearGradientBrush x:Key="Glass072" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#12FFFFFF" Offset="0"/><GradientStop Color="#1FFFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="Glass032" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#08FFFFFF" Offset="0"/><GradientStop Color="#12FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <!-- 大状态卡：Figma 参数 0.072→0.12，实测合成后卡内比参数低约 0.015，此处按实测取值 -->
+    <LinearGradientBrush x:Key="GlassState" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#0FFFFFFF" Offset="0"/><GradientStop Color="#19FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="Glass060" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#0BFFFFFF" Offset="0"/><GradientStop Color="#17FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <!-- 兼容旧引用 -->
+    <LinearGradientBrush x:Key="Glass120" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#12FFFFFF" Offset="0"/><GradientStop Color="#1FFFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="Glass078" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#0AFFFFFF" Offset="0"/><GradientStop Color="#14FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="Glass068" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#08FFFFFF" Offset="0"/><GradientStop Color="#11FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="Glass050" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#07FFFFFF" Offset="0"/><GradientStop Color="#0DFFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="Glass055" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#06FFFFFF" Offset="0"/><GradientStop Color="#0EFFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- ══════════════ 阴影 / 光晕 ══════════════ -->
+    <DropShadowEffect x:Key="ShadowCard" Color="#000000" Opacity="0.45" BlurRadius="30" Direction="90" ShadowDepth="12"/>
+    <DropShadowEffect x:Key="ShadowAccent" Color="#5C9CFF" Opacity="0.26" BlurRadius="22" Direction="90" ShadowDepth="6"/>
+    <DropShadowEffect x:Key="ShadowKnob" Color="#000000" Opacity="0.50" BlurRadius="8" Direction="90" ShadowDepth="2"/>
+    <DropShadowEffect x:Key="ShadowButton" Color="#000000" Opacity="0.40" BlurRadius="18" Direction="90" ShadowDepth="6"/>
+    <!-- 卡片阴影层专用的模糊半径：WPF BlurEffect 的扩散强于 Figma radius，
+         实测取约 Figma 值的 2/3 才落在同一视觉强度上。 -->
+    <BlurEffect x:Key="BlurShadowCard" Radius="20" RenderingBias="Quality"/>
+    <BlurEffect x:Key="BlurShadowAccent" Radius="18" RenderingBias="Quality"/>
+    <!-- 主按钮的淡蓝晕光：ShadowDepth 0 = 四周均匀，对应设计稿按钮外的一圈柔光 -->
+    <DropShadowEffect x:Key="ButtonGlow" Color="#5C9CFF" Opacity="0.55" BlurRadius="26"
+                      Direction="90" ShadowDepth="0" RenderingBias="Quality"/>
+
+    <!-- ══════════════ 玻璃卡模板 ══════════════
+         卡片 = squircle(cornerSmoothing 0.62) + 垂直 alpha 渐变 + INSIDE 描边 + 1px 顶部高光。
+         阴影单独一层「只描边、不填充」，放在卡面之下：WPF 的 DropShadowEffect 若挂在
+         Border 上会连卡内文字一起投影，出现脏边；这里让阴影只作用于形状本身。 -->
+    <ui:SheenMarginConverter x:Key="SheenMargin"/>
+    <Style x:Key="CardBase" TargetType="ContentControl">
+        <Setter Property="Foreground" Value="{StaticResource T1}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContentControl">
+                    <Grid>
+                        <ui:Squircle x:Name="ShadowShape"
+                                     Stretch="None" IsHitTestVisible="False"
+                                     Radius="{Binding Path=(ui:Glass.Radius), RelativeSource={RelativeSource TemplatedParent}}"
+                                     Smoothing="{Binding Path=(ui:Glass.Smoothing), RelativeSource={RelativeSource TemplatedParent}}"
+                                     Fill="Transparent" Stroke="#000000" StrokeThickness="2"
+                                     Opacity="0" RenderTransformOrigin="0.5,0.5"
+                                     Effect="{StaticResource BlurShadowCard}"/>
+
+                        <ui:Squircle x:Name="Face" Stretch="None" IsHitTestVisible="False"
+                                     Radius="{Binding Path=(ui:Glass.Radius), RelativeSource={RelativeSource TemplatedParent}}"
+                                     Smoothing="{Binding Path=(ui:Glass.Smoothing), RelativeSource={RelativeSource TemplatedParent}}"
+                                     Fill="{TemplateBinding Background}"
+                                     Stroke="{TemplateBinding BorderBrush}"
+                                     StrokeThickness="{Binding Path=BorderThickness.Top, RelativeSource={RelativeSource TemplatedParent}}"/>
+
+                        <Rectangle Height="1" VerticalAlignment="Top" IsHitTestVisible="False"
+                                   Margin="{Binding Path=(ui:Glass.Radius), RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource SheenMargin}}"
+                                   Fill="{Binding Path=(ui:Glass.Sheen), RelativeSource={RelativeSource TemplatedParent}}"/>
+                        <ContentPresenter/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <!-- 状态卡：Figma DROP_SHADOW r30 / y12 / spread -8 / #000 45% -->
+                        <Trigger Property="ui:Glass.Shadow" Value="Card">
+                            <Setter TargetName="ShadowShape" Property="Opacity" Value="0.45"/>
+                            <Setter TargetName="ShadowShape" Property="Stroke" Value="#000000"/>
+                            <Setter TargetName="ShadowShape" Property="StrokeThickness" Value="2"/>
+                            <Setter TargetName="ShadowShape" Property="Margin" Value="8"/>
+                            <Setter TargetName="ShadowShape" Property="Effect" Value="{StaticResource BlurShadowCard}"/>
+                            <Setter TargetName="ShadowShape" Property="RenderTransform">
+                                <Setter.Value><TranslateTransform Y="12"/></Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <!-- 选中模式卡：卡面 accent 综合 α≈0.375（Figma 实测）。
+                             晕影环整体外扩，只落在卡外侧，避免从半透明卡面透进去把卡内染蓝。 -->
+                        <Trigger Property="ui:Glass.Shadow" Value="Accent">
+                            <Setter TargetName="ShadowShape" Property="Opacity" Value="0.20"/>
+                            <Setter TargetName="ShadowShape" Property="Stroke" Value="#5C9CFF"/>
+                            <Setter TargetName="ShadowShape" Property="StrokeThickness" Value="16"/>
+                            <Setter TargetName="ShadowShape" Property="Margin" Value="-8"/>
+                            <Setter TargetName="ShadowShape" Property="Effect" Value="{StaticResource BlurShadowAccent}"/>
+                            <Setter TargetName="ShadowShape" Property="RenderTransform">
+                                <Setter.Value><TranslateTransform Y="4"/></Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="Card" TargetType="ContentControl" BasedOn="{StaticResource CardBase}">
+        <Setter Property="Background" Value="{StaticResource Glass072}"/>
+        <Setter Property="BorderBrush" Value="#1AFFFFFF"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="ui:Glass.Radius" Value="24"/>
+        <Setter Property="ui:Glass.Sheen" Value="{StaticResource Sheen26}"/>
+    </Style>
+    <Style x:Key="CardHero" TargetType="ContentControl" BasedOn="{StaticResource CardBase}">
+        <Setter Property="Background" Value="{StaticResource GlassState}"/>
+        <Setter Property="BorderBrush" Value="#2BFFFFFF"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="ui:Glass.Radius" Value="26"/>
+        <Setter Property="ui:Glass.Sheen" Value="{StaticResource Sheen28}"/>
+        <Setter Property="ui:Glass.Shadow" Value="Card"/>
+    </Style>
+    <Style x:Key="CardStat" TargetType="ContentControl" BasedOn="{StaticResource CardBase}">
+        <Setter Property="Background" Value="{StaticResource Glass060}"/>
+        <Setter Property="BorderBrush" Value="#1AFFFFFF"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="ui:Glass.Radius" Value="20"/>
+        <Setter Property="ui:Glass.Sheen" Value="{StaticResource Sheen16}"/>
+    </Style>
+    <Style x:Key="CardMode" TargetType="ContentControl" BasedOn="{StaticResource CardBase}">
+        <Setter Property="Background" Value="{StaticResource Glass032}"/>
+        <Setter Property="BorderBrush" Value="#13FFFFFF"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="ui:Glass.Radius" Value="22"/>
+        <Setter Property="ui:Glass.Sheen" Value="{StaticResource Sheen13}"/>
+    </Style>
+    <Style x:Key="CardModeOn" TargetType="ContentControl" BasedOn="{StaticResource CardBase}">
+        <Setter Property="Background" Value="#605C9CFF"/>
+        <Setter Property="BorderBrush" Value="#D95C9CFF"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
+        <Setter Property="ui:Glass.Radius" Value="22"/>
+        <Setter Property="ui:Glass.Sheen" Value="{StaticResource Sheen50}"/>
+        <Setter Property="ui:Glass.Shadow" Value="Accent"/>
+    </Style>
+    <Style x:Key="CardControl" TargetType="ContentControl" BasedOn="{StaticResource CardBase}">
+        <Setter Property="Background" Value="{StaticResource Glass068}"/>
+        <Setter Property="BorderBrush" Value="#17FFFFFF"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="ui:Glass.Radius" Value="26"/>
+        <Setter Property="ui:Glass.Sheen" Value="{StaticResource Sheen15}"/>
+    </Style>
+    <Style x:Key="CardAdv" TargetType="ContentControl" BasedOn="{StaticResource CardBase}">
+        <Setter Property="Background" Value="{StaticResource Glass050}"/>
+        <Setter Property="BorderBrush" Value="#14FFFFFF"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="ui:Glass.Radius" Value="24"/>
+        <Setter Property="ui:Glass.Sheen" Value="{StaticResource Sheen11}"/>
+    </Style>
+    <Style x:Key="CardInner" TargetType="ContentControl" BasedOn="{StaticResource CardBase}">
+        <Setter Property="Background" Value="{StaticResource Glass055}"/>
+        <Setter Property="BorderBrush" Value="#17FFFFFF"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="ui:Glass.Radius" Value="14"/>
+        <Setter Property="ui:Glass.Sheen" Value="{StaticResource Sheen15}"/>
+    </Style>
+    <Style x:Key="CardSelected" TargetType="ContentControl" BasedOn="{StaticResource CardBase}">
+        <Setter Property="Background" Value="#295C9CFF"/>
+        <Setter Property="BorderBrush" Value="#8C5C9CFF"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="ui:Glass.Radius" Value="12"/>
+        <Setter Property="ui:Glass.Sheen" Value="{StaticResource Sheen20}"/>
+    </Style>
+    <Style x:Key="CardSoft" TargetType="ContentControl" BasedOn="{StaticResource CardBase}">
+        <Setter Property="Background" Value="#0DFFFFFF"/>
+        <Setter Property="BorderBrush" Value="#24FFFFFF"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="ui:Glass.Radius" Value="12"/>
+        <Setter Property="ui:Glass.Sheen" Value="{StaticResource Sheen11}"/>
+    </Style>
+
+    <!-- ══════════════ 文本 ══════════════ -->
+    <Style x:Key="Label" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="10.5"/>
+        <Setter Property="Foreground" Value="{StaticResource T4}"/>
+        <Setter Property="LineHeight" Value="15"/>
+    </Style>
+    <Style x:Key="Body" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Foreground" Value="{StaticResource T2}"/>
+    </Style>
+    <Style x:Key="CardTitle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="{StaticResource T1}"/>
+    </Style>
+    <Style x:Key="BigValue" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="56"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="{StaticResource T1}"/>
+    </Style>
+
+    <!-- ══════════════ 按钮 ══════════════ -->
+    <Style x:Key="PrimaryButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Effect" Value="{StaticResource ButtonGlow}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="{StaticResource Accent}" CornerRadius="17">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#7AB0FF"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="GhostButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{StaticResource T2}"/>
+        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="#0DFFFFFF" BorderBrush="#1FFFFFFF" BorderThickness="1" CornerRadius="17">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#1AFFFFFF"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="Chip" TargetType="Button">
+        <Setter Property="Foreground" Value="{StaticResource T2}"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="#0FFFFFFF" BorderBrush="#29FFFFFF" BorderThickness="1" CornerRadius="16">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#1AFFFFFF"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ChipOn" TargetType="Button">
+        <Setter Property="Foreground" Value="{StaticResource T1}"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="#295C9CFF" BorderBrush="#8C5C9CFF" BorderThickness="1" CornerRadius="16">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="StepButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{StaticResource T2}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="#0DFFFFFF" BorderBrush="#1FFFFFFF" BorderThickness="1" CornerRadius="8">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#1FFFFFFF"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 常按状态：管理页打开时按钮保持「已按下」的样子 -->
+    <Style x:Key="StepButtonOn" TargetType="Button">
+        <Setter Property="Foreground" Value="{StaticResource AccentInk}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Cursor" Value="Arrow"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="#265C9CFF" BorderBrush="#8C5C9CFF" BorderThickness="1" CornerRadius="8">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="GhostStrongButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{StaticResource T1}"/>
+        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="#16FFFFFF" BorderBrush="#2EFFFFFF" BorderThickness="1" CornerRadius="17">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#24FFFFFF"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TextButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{StaticResource T4}"/>
+        <Setter Property="FontSize" Value="10.5"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="Transparent" Padding="4,2">
+                        <ContentPresenter/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource T1}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ══════════════ 导航 ══════════════ -->
+    <ItemsPanelTemplate x:Key="NavCanvas"><Canvas/></ItemsPanelTemplate>
+    <Style x:Key="NavItem" TargetType="ListBoxItem">
+        <Setter Property="Canvas.Left" Value="12"/>
+        <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+        <Setter Property="Width" Value="184"/>
+        <Setter Property="Height" Value="36"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Grid>
+                        <Border x:Name="Bd" CornerRadius="10" Background="Transparent"/>
+                        <Rectangle x:Name="Sh" Height="1" VerticalAlignment="Top" Margin="1,0.5,1,0"
+                                   Fill="{StaticResource Sheen26}" Visibility="Collapsed" IsHitTestVisible="False"/>
+                        <TextBlock x:Name="Tx" Text="{Binding Label}" Margin="12,8,0,0"
+                                   FontSize="13" Foreground="{StaticResource T2}"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#13FFFFFF"/>
+                            <Setter TargetName="Tx" Property="Foreground" Value="{StaticResource T1}"/>
+                            <Setter TargetName="Tx" Property="FontWeight" Value="Bold"/>
+                            <Setter TargetName="Sh" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#0DFFFFFF"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ══════════════ 滑杆：粗（03 页 8px 轨 + 20px 白滑块 + 光晕）══════════════ -->
+    <Style x:Key="RepeatTransparent" TargetType="RepeatButton">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Border Background="{TemplateBinding Background}" Height="8" CornerRadius="4"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="SliderThick" TargetType="Slider">
+        <Setter Property="Height" Value="26"/>
+        <Setter Property="IsSnapToTickEnabled" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Grid VerticalAlignment="Center" Height="26">
+                        <Border Height="8" CornerRadius="4" Background="#12FFFFFF" VerticalAlignment="Center"/>
+                        <Track x:Name="PART_Track">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource RepeatTransparent}" Background="#D95C9CFF" Command="Slider.DecreaseLarge"/>
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource RepeatTransparent}" Background="Transparent" Command="Slider.IncreaseLarge"/>
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Width="26" Height="26" Cursor="Hand">
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Grid Width="26" Height="26">
+                                                <Ellipse Width="26" Height="26" Fill="#265C9CFF"/>
+                                                <Ellipse Width="20" Height="20" Fill="{StaticResource T1}" Effect="{StaticResource ShadowKnob}"/>
+                                            </Grid>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ══════════════ 滑杆：细（04 页 3px 轨 + 14px 白点 + accent 环）══════════════ -->
+    <Style x:Key="RepeatThin" TargetType="RepeatButton">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Border Background="{TemplateBinding Background}" Height="3" CornerRadius="2"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="SliderThin" TargetType="Slider">
+        <Setter Property="Height" Value="16"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Grid VerticalAlignment="Center" Height="16">
+                        <Border Height="3" CornerRadius="2" Background="#1AFFFFFF" VerticalAlignment="Center"/>
+                        <Track x:Name="PART_Track">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource RepeatThin}" Background="#D95C9CFF" Command="Slider.DecreaseLarge"/>
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource RepeatThin}" Background="Transparent" Command="Slider.IncreaseLarge"/>
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Width="14" Height="14" Cursor="Hand">
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Grid Width="14" Height="14">
+                                                <Ellipse Fill="{StaticResource T1}"/>
+                                                <Ellipse Stroke="#D95C9CFF" StrokeThickness="1.5" Fill="Transparent"/>
+                                            </Grid>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ══════════════ 滚动条 · 静态玻璃（Figma 41 定稿：8×72）══════════════
+         固定短滑块 72px，居中在 12px 命中区里；冰白 13%→5% 竖向渐变 + 白 12% 描边
+         + 极淡投影。无轨道、无箭头、无 hover/拖动变化。 -->
+    <Style x:Key="SlimRepeat" TargetType="RepeatButton">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Border Background="Transparent"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="SlimThumb" TargetType="Thumb">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border Width="8" CornerRadius="4" BorderBrush="#1FFFFFFF" BorderThickness="1">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#21DCE9FF" Offset="0"/>
+                                <GradientStop Color="#0DDCE9FF" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Border.Effect>
+                            <DropShadowEffect Color="#000000" Opacity="0.35" BlurRadius="8" ShadowDepth="2" Direction="270" RenderingBias="Quality"/>
+                        </Border.Effect>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="SlimThumbH" TargetType="Thumb">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border Height="8" CornerRadius="4" BorderBrush="#1FFFFFFF" BorderThickness="1">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#21DCE9FF" Offset="0"/>
+                                <GradientStop Color="#0DDCE9FF" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="SlimScrollBar" TargetType="{x:Type ScrollBar}">
+        <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
+        <Setter Property="Width" Value="12"/>
+        <Setter Property="MinWidth" Value="12"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ScrollBar}">
+                    <Grid Width="12" Background="Transparent">
+                        <Track x:Name="PART_Track" Orientation="Vertical" IsDirectionReversed="true" Focusable="False"
+                                   Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                                   Value="{TemplateBinding Value}" ViewportSize="{TemplateBinding ViewportSize}">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource SlimRepeat}" Command="ScrollBar.PageUpCommand"/>
+                            </Track.DecreaseRepeatButton>
+                            <Track.Thumb>
+                                <!-- 固定 72px，Track 据此 clamp 滑块长度与拖动映射 -->
+                                <Thumb Style="{StaticResource SlimThumb}" MinHeight="72" MaxHeight="72" HorizontalAlignment="Center"/>
+                            </Track.Thumb>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource SlimRepeat}" Command="ScrollBar.PageDownCommand"/>
+                            </Track.IncreaseRepeatButton>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="Orientation" Value="Horizontal">
+                <Setter Property="Width" Value="Auto"/>
+                <Setter Property="MinWidth" Value="0"/>
+                <Setter Property="Height" Value="12"/>
+                <Setter Property="MinHeight" Value="12"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ScrollBar}">
+                            <Grid Height="12" Background="Transparent">
+                                <Track x:Name="PART_Track" Orientation="Horizontal" IsDirectionReversed="False" Focusable="False"
+                                       Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                                       Value="{TemplateBinding Value}" ViewportSize="{TemplateBinding ViewportSize}">
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Style="{StaticResource SlimRepeat}" Command="ScrollBar.PageLeftCommand"/>
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.Thumb>
+                                        <Thumb Style="{StaticResource SlimThumbH}" MinWidth="72" MaxWidth="72" VerticalAlignment="Center"/>
+                                    </Track.Thumb>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Style="{StaticResource SlimRepeat}" Command="ScrollBar.PageRightCommand"/>
+                                    </Track.IncreaseRepeatButton>
+                                </Track>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ══════════════ 开关 ══════════════ -->
+    <Style x:Key="Switch" TargetType="CheckBox">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Border x:Name="Bd" Width="38" Height="22" CornerRadius="11" Background="#0FFFFFFF" BorderBrush="#1FFFFFFF" BorderThickness="1">
+                        <Ellipse x:Name="Dot" Width="14" Height="14" Fill="{StaticResource T3}" HorizontalAlignment="Left" Margin="3,0,0,0"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#8C5C9CFF"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#D95C9CFF"/>
+                            <Setter TargetName="Dot" Property="HorizontalAlignment" Value="Right"/>
+                            <Setter TargetName="Dot" Property="Margin" Value="0,0,3,0"/>
+                            <Setter TargetName="Dot" Property="Fill" Value="{StaticResource T1}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ══════════════ 窗口按钮（极淡，不破坏一比一）══════════════ -->
+    <Style x:Key="WinButton" TargetType="Button">
+        <Setter Property="Foreground" Value="#33FFFFFF"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="Transparent" CornerRadius="6">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#14FFFFFF"/>
+                            <Setter Property="Foreground" Value="{StaticResource T1}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ══════════════ 紧凑数值输入框（高级参数编辑）══════════════ -->
+    <Style x:Key="NumBox" TargetType="TextBox">
+        <Setter Property="Foreground" Value="{StaticResource T1}"/>
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="Height" Value="26"/>
+        <Setter Property="Padding" Value="8,2"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="TextAlignment" Value="Left"/>
+        <Setter Property="CaretBrush" Value="{StaticResource Accent}"/>
+        <Setter Property="Background" Value="#12FFFFFF"/>
+        <Setter Property="BorderBrush" Value="#24FFFFFF"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5">
+                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"
+                                      VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#48FFFFFF"/>
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

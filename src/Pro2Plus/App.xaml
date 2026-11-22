@@ -1,0 +1,17 @@
+<Application x:Class="Pro2Plus.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Pro2Plus"
+             xmlns:ui="clr-namespace:Pro2Plus.UI">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="UI/Icons.xaml"/>
+                <ResourceDictionary Source="UI/Theme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <ui:BoolToVisibilityConverter x:Key="BoolVis"/>
+            <ui:CalibrationStatusConverter x:Key="CalStatus"/>
+            <ui:CalibrationDotConverter x:Key="CalDot"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

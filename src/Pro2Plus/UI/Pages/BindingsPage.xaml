@@ -1,0 +1,446 @@
+<UserControl x:Class="Pro2Plus.UI.Pages.BindingsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:Pro2Plus.UI"
+             Width="1060" Height="840" Background="Transparent"
+             FontFamily="Microsoft YaHei UI"
+             UseLayoutRounding="True" SnapsToDevicePixels="True">
+    <Canvas Width="1060" Height="840">
+
+        <!-- ══════════════════ 手柄模式（Pro2 / Xbox / PS5）══════════════════ -->
+        <Canvas x:Name="PadView" Width="1060" Height="840">
+
+            <ContentControl Style="{StaticResource Card}" Canvas.Left="240" Canvas.Top="96" Width="496" Height="560">
+                <Canvas>
+                    <Image x:Name="PadImage" Canvas.Left="24" Canvas.Top="90" Width="448" Height="315"
+                           Stretch="Uniform" Opacity="0.92" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <!-- 实时按键高亮层（读虚拟手柄最终输出），在热区命中层之下 -->
+                    <Canvas x:Name="HighlightLayer" Canvas.Left="0" Canvas.Top="0" Width="496" Height="560"
+                            IsHitTestVisible="False"/>
+                    <!-- 摇杆位置点单独一层：摇杆轴每帧变化也不会重建带模糊的按键高亮，避免周期闪烁 -->
+                    <Canvas x:Name="StickHighlightLayer" Canvas.Left="0" Canvas.Top="0" Width="496" Height="560"
+                            IsHitTestVisible="False"/>
+                    <Canvas x:Name="HotspotLayer" Canvas.Left="0" Canvas.Top="0" Width="496" Height="560"/>
+
+                    <Button x:Name="ChipGL" Canvas.Left="24" Canvas.Top="439" Width="48" Height="32"
+                            Content="GL" Style="{StaticResource ChipOn}" Tag="GL" Click="Chip_Click"/>
+                    <Button x:Name="ChipGR" Canvas.Left="78" Canvas.Top="439" Width="48" Height="32"
+                            Content="GR" Style="{StaticResource Chip}" Tag="GR" Click="Chip_Click"/>
+                    <Button x:Name="ChipShot" Canvas.Left="132" Canvas.Top="439" Width="48" Height="32"
+                            Content="截图" Style="{StaticResource Chip}" Tag="截图" Click="Chip_Click"/>
+                    <Button x:Name="ChipHome" Canvas.Left="186" Canvas.Top="439" Width="48" Height="32"
+                            Content="Home" Style="{StaticResource Chip}" FontSize="10.5" Tag="Home" Click="Chip_Click"/>
+
+                    <Grid x:Name="LayoutSeg" Canvas.Left="242" Canvas.Top="439" Width="230" Height="32">
+                        <Border Background="#0DFFFFFF" BorderBrush="#1FFFFFFF" BorderThickness="1" CornerRadius="16"/>
+                        <Border x:Name="SegXbox" Width="112" Height="26" Margin="3,3,0,0"
+                                HorizontalAlignment="Left" VerticalAlignment="Top"
+                                Background="#2E5C9CFF" BorderBrush="#8C5C9CFF" BorderThickness="1" CornerRadius="13"
+                                Visibility="Collapsed"/>
+                        <Border x:Name="SegPro2" Width="112" Height="26" Margin="115,3,0,0"
+                                HorizontalAlignment="Left" VerticalAlignment="Top"
+                                Background="#2E5C9CFF" BorderBrush="#8C5C9CFF" BorderThickness="1" CornerRadius="13"/>
+                        <TextBlock x:Name="SegTextXbox" Text="Xbox 物理布局" Margin="3,0,0,0" Width="112"
+                                   HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False"
+                                   FontSize="10.5" Foreground="{StaticResource T3}" TextAlignment="Center">
+                            <TextBlock.RenderTransform><TranslateTransform Y="0.8"/></TextBlock.RenderTransform>
+                        </TextBlock>
+                        <TextBlock x:Name="SegTextPro2" Text="Pro2 物理布局" Margin="115,0,0,0" Width="112"
+                                   HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False"
+                                   FontSize="10.5" Foreground="{StaticResource T1}" FontWeight="Bold" TextAlignment="Center">
+                            <TextBlock.RenderTransform><TranslateTransform Y="0.8"/></TextBlock.RenderTransform>
+                        </TextBlock>
+                        <Button Width="115" Height="32" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                Tag="xbox" Click="Layout_Click" Cursor="Hand">
+                            <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate></Button.Template>
+                        </Button>
+                        <Button Width="115" Height="32" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                Margin="115,0,0,0" Tag="pro2" Click="Layout_Click" Cursor="Hand">
+                            <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate></Button.Template>
+                        </Button>
+                    </Grid>
+                </Canvas>
+            </ContentControl>
+
+            <!-- 右：映射卡 -->
+            <ContentControl Style="{StaticResource Card}" Canvas.Left="752" Canvas.Top="96" Width="276" Height="560">
+                <Canvas>
+                    <!-- ══ 配置条：每个模式各自一组配置，‹ › 切换，「管理」新建 / 改名 / 删除 ══ -->
+                    <Button x:Name="ProfilePrev" Canvas.Left="24" Canvas.Top="18" Width="22" Height="28" Content="‹"
+                            Style="{StaticResource StepButton}" FontSize="14" ToolTip="上一套配置" Click="ProfilePrev_Click"/>
+                    <ContentControl x:Name="ProfileChip" Style="{StaticResource CardSoft}" Canvas.Left="50" Canvas.Top="18" Width="130" Height="28"
+                                    PreviewMouseLeftButtonDown="ProfileChip_PreviewMouseDown">
+                        <Canvas>
+                            <TextBox x:Name="ProfileName" Canvas.Left="12" Canvas.Top="4" Width="88" Height="20"
+                                     Text="默认" FontSize="11.5" Foreground="{StaticResource T1}"
+                                     Background="Transparent" BorderThickness="0" Padding="0,1,0,0"
+                                     CaretBrush="{StaticResource Accent}" IsReadOnly="True" IsHitTestVisible="False"
+                                     VerticalContentAlignment="Center"
+                                     KeyDown="ProfileName_KeyDown" LostFocus="ProfileName_LostFocus"/>
+                            <TextBlock Canvas.Left="102" Canvas.Top="4" Text="▾" FontSize="10"
+                                       Foreground="{StaticResource T4}" LineHeight="18" Width="18" TextAlignment="Right"/>
+                            <Button Canvas.Left="0" Canvas.Top="0" Width="130" Height="28" Tag="list"
+                                    Click="ProfileList_Click" Cursor="Hand">
+                                <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate></Button.Template>
+                            </Button>
+                        </Canvas>
+                    </ContentControl>
+                    <Button x:Name="ProfileNext" Canvas.Left="184" Canvas.Top="18" Width="22" Height="28" Content="›"
+                            Style="{StaticResource StepButton}" FontSize="14" ToolTip="下一套配置" Click="ProfileNext_Click"/>
+                    <Button x:Name="ProfileMore" Canvas.Left="210" Canvas.Top="18" Width="42" Height="28" Content="管理"
+                            Style="{StaticResource StepButton}" FontSize="10" ToolTip="新建 / 重命名 / 删除配置"
+                            Click="ProfileList_Click"/>
+
+                    <!-- 常态：当前源键的映射详情 -->
+                    <Canvas x:Name="PadEditView" Width="276" Height="560">
+                        <TextBlock x:Name="PadTitle" Canvas.Left="24" Canvas.Top="60" Text="GL 背键" FontSize="19"
+                                   FontWeight="Bold" LineHeight="26" Foreground="{StaticResource T1}" Width="228"/>
+                        <Rectangle Canvas.Left="24" Canvas.Top="92" Width="228" Height="1" Fill="#12FFFFFF"/>
+
+                        <TextBlock Canvas.Left="24" Canvas.Top="120" Text="映射到" FontSize="10.5"
+                                   Foreground="{StaticResource T4}" LineHeight="15"/>
+                        <ContentControl Style="{StaticResource CardSoft}" Canvas.Left="24" Canvas.Top="138" Width="228" Height="44">
+                            <Canvas>
+                                <Image x:Name="PadOutputIcon" Canvas.Left="12" Canvas.Top="12" Width="20" Height="20"
+                                       Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                <TextBlock x:Name="PadOutput" Canvas.Left="40" Canvas.Top="11" Text="手柄 B" FontSize="13"
+                                           LineHeight="20" Foreground="{StaticResource T1}" Width="146"/>
+                                <TextBlock Canvas.Left="182" Canvas.Top="12" Text="修改" FontSize="10.5"
+                                           Foreground="{StaticResource Accent}" LineHeight="18" Width="36" TextAlignment="Right"/>
+                                <Button Canvas.Left="0" Canvas.Top="0" Width="228" Height="44" Tag="pick" Click="PickTarget_Click" Cursor="Hand">
+                                    <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate></Button.Template>
+                                </Button>
+                            </Canvas>
+                        </ContentControl>
+
+                        <Button x:Name="ResetThisKeyButton" Canvas.Left="24" Canvas.Top="194" Width="228" Height="32" Content="恢复此键默认"
+                                Style="{StaticResource GhostButton}" FontSize="11" Click="ResetThisKey_Click"/>
+
+                        <!-- 当前输出键的大标识：靠下摆，与上方留白拉开层次 -->
+                        <TextBlock Canvas.Left="24" Canvas.Top="294" Text="按下一个键" FontSize="10.5"
+                                   Foreground="{StaticResource T4}" LineHeight="15"/>
+                        <Image x:Name="PadOutputBadge" Canvas.Left="116" Canvas.Top="358" Width="44" Height="44"
+                               Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    </Canvas>
+
+                    <!-- 选择目标：内联替换，不弹层 -->
+                    <Canvas x:Name="PadPickView" Width="276" Height="560" Visibility="Collapsed">
+                        <TextBlock Canvas.Left="24" Canvas.Top="30" Text="选择目标" FontSize="20" FontWeight="Bold"
+                                   LineHeight="28" Foreground="{StaticResource T1}" Width="180"/>
+                        <TextBlock x:Name="PickSubtitle" Canvas.Left="24" Canvas.Top="60" Text="GL 背键 · 轻按" FontSize="10.5"
+                                   Foreground="{StaticResource T4}" LineHeight="15" Width="180"/>
+                        <Button Canvas.Left="188" Canvas.Top="28" Width="64" Height="28" Content="返回"
+                                Style="{StaticResource GhostButton}" FontSize="10.5" Click="PickCancel_Click"/>
+                        <Rectangle Canvas.Left="24" Canvas.Top="84" Width="228" Height="1" Fill="#12FFFFFF"/>
+                        <Canvas x:Name="PickHost" Canvas.Left="24" Canvas.Top="96" Width="228" Height="450"/>
+                    </Canvas>
+
+                    <!-- 配置管理：列表 + 新建 / 重命名 -->
+                    <Canvas x:Name="PadProfileView" Width="276" Height="560" Visibility="Collapsed">
+                        <TextBlock Canvas.Left="24" Canvas.Top="30" Text="配置" FontSize="20" FontWeight="Bold"
+                                   LineHeight="28" Foreground="{StaticResource T1}" Width="150"/>
+                        <TextBlock x:Name="ProfileSubtitle" Canvas.Left="24" Canvas.Top="60" Text="Xbox 输出" FontSize="10.5"
+                                   Foreground="{StaticResource T4}" LineHeight="15" Width="150"/>
+                        <Button Canvas.Left="188" Canvas.Top="28" Width="64" Height="28" Content="返回"
+                                Style="{StaticResource GhostButton}" FontSize="10.5" Click="ProfileBack_Click"/>
+                        <Rectangle Canvas.Left="24" Canvas.Top="84" Width="228" Height="1" Fill="#12FFFFFF"/>
+                        <ScrollViewer x:Name="PadProfileScroll" Canvas.Left="24" Canvas.Top="96" Width="228" Height="292"
+                                      VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled"
+                                      PanningMode="VerticalOnly">
+                            <Canvas x:Name="ProfileListHost" Width="228" Height="300"/>
+                        </ScrollViewer>
+                        <Canvas Canvas.Left="252" Canvas.Top="96" Width="16" Height="292" Background="Transparent">
+                            <Grid x:Name="PadProfileThumb" Width="12" Height="72" Canvas.Left="2" Canvas.Top="0"
+                                  Background="Transparent" Cursor="Hand"
+                                  MouseLeftButtonDown="ProfileThumb_MouseLeftButtonDown"
+                                  MouseMove="ProfileThumb_MouseMove"
+                                  MouseLeftButtonUp="ProfileThumb_MouseLeftButtonUp"
+                                  MouseWheel="ProfileThumb_MouseWheel">
+                                <Border Width="8" CornerRadius="4" BorderBrush="#1FFFFFFF" BorderThickness="1"
+                                        HorizontalAlignment="Center">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#21DCE9FF" Offset="0"/>
+                                            <GradientStop Color="#0DDCE9FF" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#000000" Opacity="0.35" BlurRadius="8" ShadowDepth="2"
+                                                          Direction="270" RenderingBias="Quality"/>
+                                    </Border.Effect>
+                                </Border>
+                            </Grid>
+                        </Canvas>
+                        <Button Canvas.Left="24" Canvas.Top="404" Width="228" Height="32" Content="新建配置"
+                                Style="{StaticResource GhostStrongButton}" FontSize="11" Click="ProfileCreate_Click"/>
+                        <TextBlock Canvas.Left="24" Canvas.Top="446" FontSize="9.5" LineHeight="14" Width="228"
+                                   Foreground="{StaticResource T4}" TextWrapping="Wrap"
+                                   Text="新建会复制当前这套的按键。双击上方的配置名就能改名；列表点名字切换，× 删除（至少留一套）。"/>
+                    </Canvas>
+                </Canvas>
+            </ContentControl>
+        </Canvas>
+
+        <!-- ══════════════════ 键鼠模式（全手柄键 → 键盘 / 鼠标 / 手柄键）══════════════════ -->
+        <Canvas x:Name="KbmView" Width="1060" Height="840" Visibility="Collapsed">
+
+            <ContentControl Style="{StaticResource Card}" Canvas.Left="240" Canvas.Top="96" Width="788" Height="300">
+                <Canvas>
+                    <TextBlock x:Name="KbmTitle" Canvas.Left="28" Canvas.Top="23" Text="屏幕键盘" FontSize="10.5"
+                               Foreground="{StaticResource T4}" LineHeight="15"/>
+                    <TextBlock x:Name="KbmOutputLabel" Canvas.Left="520" Canvas.Top="23" Text="输出 · 键盘 WASD"
+                               FontSize="10.5" Foreground="{StaticResource Accent}" LineHeight="15"
+                               Width="240" TextAlignment="Right"/>
+                    <Canvas x:Name="KeyboardHost" Canvas.Left="30" Canvas.Top="62" Width="728" Height="208"/>
+                    <Canvas x:Name="MouseOutView" Canvas.Left="0" Canvas.Top="0" Width="788" Height="300" Visibility="Collapsed">
+                        <ui:DebossIcon Canvas.Left="346" Canvas.Top="94" Width="96" Height="96"
+                                       Geometry="{StaticResource GeoMouse}" MarkOpacity="0.72"/>
+                        <TextBlock Canvas.Left="0" Canvas.Top="204" Text="鼠标" FontSize="21" FontWeight="Bold"
+                                   LineHeight="28" Foreground="{StaticResource T1}" Width="788" TextAlignment="Center"/>
+                        <TextBlock Canvas.Left="0" Canvas.Top="238" Text="右摇杆 · 移动      陀螺仪 · 瞄准"
+                                   FontSize="11.5" Foreground="{StaticResource T3}" LineHeight="16"
+                                   Width="788" TextAlignment="Center"/>
+                    </Canvas>
+
+                    <!-- 目标选择：铺在键盘上方，不弹层 -->
+                    <Canvas x:Name="KbmPickView" Canvas.Left="0" Canvas.Top="0" Width="788" Height="300" Visibility="Collapsed">
+                        <TextBlock x:Name="KbmPickTitle" Canvas.Left="28" Canvas.Top="20" Text="选择目标" FontSize="19" FontWeight="Bold"
+                                   LineHeight="26" Foreground="{StaticResource T1}" Width="200"/>
+                        <TextBlock x:Name="KbmPickSubtitle" Canvas.Left="28" Canvas.Top="48" Text="GL · 轻按"
+                                   FontSize="10.5" Foreground="{StaticResource T4}" LineHeight="15" Width="400"/>
+
+                        <!-- 组合键：上半部把「A + B」整组亮出来，右边就是换组合键 -->
+                        <Canvas x:Name="KbmComboHead" Width="788" Height="140" Visibility="Collapsed">
+                            <StackPanel x:Name="KbmComboChip" Canvas.Left="28" Canvas.Top="12"
+                                        Orientation="Horizontal" Height="36" VerticalAlignment="Center"/>
+                            <TextBlock Canvas.Left="28" Canvas.Top="58" Text="输出" FontSize="21" FontWeight="Bold"
+                                       LineHeight="28" Foreground="{StaticResource T1}" Width="200"/>
+                        </Canvas>
+
+                        <Button Canvas.Left="696" Canvas.Top="20" Width="64" Height="28" Content="返回"
+                                Style="{StaticResource GhostButton}" FontSize="10.5" Click="KbmPickCancel_Click"/>
+                        <Button x:Name="KbmCaptureButton" Canvas.Left="28" Canvas.Top="72" Width="132" Height="30"
+                                Content="捕获键盘按键" Style="{StaticResource GhostStrongButton}" FontSize="11"
+                                Click="CaptureKbm_Click"/>
+                        <Button x:Name="KbmClearButton" Canvas.Left="168" Canvas.Top="72" Width="64" Height="30" Content="清除"
+                                Style="{StaticResource GhostButton}" FontSize="10.5" Click="KbmClear_Click"/>
+                        <TextBlock x:Name="KbmCaptureHint" Canvas.Left="244" Canvas.Top="79" Text="点「捕获」后按键盘上的键"
+                                   FontSize="9.5" Foreground="{StaticResource T4}" LineHeight="15" Width="300"/>
+                        <Button x:Name="KbmPartnerEditButton" Canvas.Left="240" Canvas.Top="72" Width="96" Height="30"
+                                Content="换组合键" Style="{StaticResource GhostButton}" FontSize="10.5"
+                                Visibility="Collapsed" Click="KbmPartnerEdit_Click"/>
+
+                        <!-- 组合键：当前键图标 + 「+」，表示还要补一颗 -->
+                        <StackPanel x:Name="KbmPartnerChip" Canvas.Left="28" Canvas.Top="48"
+                                    Orientation="Horizontal" Height="34" Visibility="Collapsed"/>
+                        <Rectangle x:Name="KbmPickDivider" Canvas.Left="28" Canvas.Top="112" Width="732" Height="1" Fill="#12FFFFFF"/>
+
+                        <TextBlock x:Name="KbmMouseLabel" Canvas.Left="28" Canvas.Top="116" Text="鼠标" FontSize="9.5"
+                                   Foreground="{StaticResource T4}" LineHeight="14"/>
+                        <Canvas x:Name="KbmMouseHost" Canvas.Left="28" Canvas.Top="132" Width="732" Height="30"/>
+                        <TextBlock x:Name="KbmPadLabel" Canvas.Left="28" Canvas.Top="168" Text="常用键"
+                                   FontSize="9.5" Foreground="{StaticResource T4}" LineHeight="14"/>
+                        <Canvas x:Name="KbmPadHost" Canvas.Left="28" Canvas.Top="184" Width="732" Height="102"/>
+
+                    </Canvas>
+
+                    <!-- 配置管理（键鼠模式）：列表 + 新建 / 重命名，铺在键盘卡上 -->
+                    <Canvas x:Name="KbmProfileView" Canvas.Left="0" Canvas.Top="0" Width="788" Height="300"
+                            Visibility="Collapsed">
+                        <TextBlock Canvas.Left="28" Canvas.Top="20" Text="配置" FontSize="19" FontWeight="Bold"
+                                   LineHeight="26" Foreground="{StaticResource T1}" Width="200"/>
+                        <TextBlock x:Name="KbmProfileSubtitle" Canvas.Left="28" Canvas.Top="48" Text="键鼠模式 · 1 套"
+                                   FontSize="10.5" Foreground="{StaticResource T4}" LineHeight="15" Width="300"/>
+                        <Button Canvas.Left="696" Canvas.Top="20" Width="64" Height="28" Content="返回"
+                                Style="{StaticResource GhostButton}" FontSize="10.5" Click="KbmProfileBack_Click"/>
+                        <Rectangle Canvas.Left="28" Canvas.Top="80" Width="732" Height="1" Fill="#12FFFFFF"/>
+
+                        <!-- 配置列表：内置滚动条隐藏，右侧自绘玻璃滑块（与设置页同一套方案） -->
+                        <ScrollViewer x:Name="KbmProfileScroll" Canvas.Left="28" Canvas.Top="92" Width="360" Height="196"
+                                      VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled"
+                                      PanningMode="VerticalOnly">
+                            <Canvas x:Name="KbmProfileListHost" Width="360" Height="196"/>
+                        </ScrollViewer>
+                        <Canvas x:Name="KbmProfileBar" Canvas.Left="392" Canvas.Top="92" Width="14" Height="196"
+                                Background="Transparent">
+                            <Grid x:Name="KbmProfileThumb" Width="12" Height="72" Canvas.Left="1" Canvas.Top="0"
+                                  Background="Transparent" Cursor="Hand"
+                                  MouseLeftButtonDown="ProfileThumb_MouseLeftButtonDown"
+                                  MouseMove="ProfileThumb_MouseMove"
+                                  MouseLeftButtonUp="ProfileThumb_MouseLeftButtonUp"
+                                  MouseWheel="ProfileThumb_MouseWheel">
+                                <Border Width="8" CornerRadius="4" BorderBrush="#1FFFFFFF" BorderThickness="1"
+                                        HorizontalAlignment="Center">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#21DCE9FF" Offset="0"/>
+                                            <GradientStop Color="#0DDCE9FF" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#000000" Opacity="0.35" BlurRadius="8" ShadowDepth="2"
+                                                          Direction="270" RenderingBias="Quality"/>
+                                    </Border.Effect>
+                                </Border>
+                            </Grid>
+                        </Canvas>
+
+                        <Button Canvas.Left="420" Canvas.Top="92" Width="300" Height="32" Content="新建配置"
+                                Style="{StaticResource GhostStrongButton}" FontSize="11" Click="KbmProfileCreate_Click"/>
+                        <TextBlock Canvas.Left="420" Canvas.Top="136" FontSize="9.5" LineHeight="14" Width="300"
+                                   Foreground="{StaticResource T4}" TextWrapping="Wrap"
+                                   Text="新建会复制当前这套的按键。双击上方的配置名就能改名；列表点名字切换，× 删除（至少留一套）。"/>
+                    </Canvas>
+                </Canvas>
+            </ContentControl>
+
+            <ContentControl Style="{StaticResource Card}" Canvas.Left="240" Canvas.Top="412" Width="496" Height="244">
+                <Canvas>
+                    <TextBlock Canvas.Left="24" Canvas.Top="37" Text="手柄按键" FontSize="10.5"
+                               Foreground="{StaticResource T4}" LineHeight="15"/>
+                    <Canvas x:Name="SourceHost" Canvas.Left="0" Canvas.Top="0" Width="496" Height="244"/>
+                </Canvas>
+            </ContentControl>
+
+            <ContentControl Style="{StaticResource Card}" Canvas.Left="752" Canvas.Top="412" Width="276" Height="244">
+                <Canvas>
+                    <!-- ① 主视图：配置条 + 轻按 + 更多动作（未绑轻按时锁住） -->
+                    <Canvas x:Name="KbmMainView">
+                        <Button x:Name="KbmProfilePrev" Canvas.Left="24" Canvas.Top="8" Width="22" Height="26"
+                                Content="‹" Style="{StaticResource StepButton}" FontSize="13"
+                                ToolTip="上一套配置" Click="ProfilePrev_Click"/>
+                        <ContentControl x:Name="KbmProfileChip" Style="{StaticResource CardSoft}"
+                                        Canvas.Left="50" Canvas.Top="8" Width="130" Height="26"
+                                        PreviewMouseLeftButtonDown="ProfileChip_PreviewMouseDown">
+                            <Canvas>
+                                <TextBox x:Name="KbmProfileName" Canvas.Left="12" Canvas.Top="3" Width="88" Height="20"
+                                         Text="默认" FontSize="11" Foreground="{StaticResource T1}"
+                                         Background="Transparent" BorderThickness="0" Padding="0,1,0,0"
+                                         CaretBrush="{StaticResource Accent}" IsReadOnly="True" IsHitTestVisible="False"
+                                         VerticalContentAlignment="Center"
+                                         KeyDown="ProfileName_KeyDown" LostFocus="ProfileName_LostFocus"/>
+                                <TextBlock Canvas.Left="102" Canvas.Top="3" Text="▾" FontSize="10"
+                                           Foreground="{StaticResource T4}" LineHeight="18" Width="18" TextAlignment="Right"/>
+                                <Button Canvas.Left="0" Canvas.Top="0" Width="130" Height="26" Tag="list"
+                                        Click="ProfileList_Click" Cursor="Hand">
+                                    <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate></Button.Template>
+                                </Button>
+                            </Canvas>
+                        </ContentControl>
+                        <Button x:Name="KbmProfileNext" Canvas.Left="184" Canvas.Top="8" Width="22" Height="26"
+                                Content="›" Style="{StaticResource StepButton}" FontSize="13"
+                                ToolTip="下一套配置" Click="ProfileNext_Click"/>
+                        <Button x:Name="KbmProfileMore" Canvas.Left="210" Canvas.Top="8" Width="42" Height="26"
+                                Content="管理" Style="{StaticResource StepButton}" FontSize="10"
+                                ToolTip="新建 / 重命名 / 删除配置" Click="ProfileList_Click"/>
+
+                        <TextBlock x:Name="KbmSrcTitle" Canvas.Left="24" Canvas.Top="42" Text="L 键" FontSize="19"
+                                   FontWeight="Bold" LineHeight="26" Foreground="{StaticResource T1}" Width="228"/>
+                        <Rectangle Canvas.Left="24" Canvas.Top="76" Width="228" Height="1" Fill="#12FFFFFF"/>
+
+                        <ContentControl x:Name="KbmTapRow" Style="{StaticResource CardSelected}"
+                                        Canvas.Left="24" Canvas.Top="84" Width="228" Height="62">
+                            <Canvas>
+                                <TextBlock Canvas.Left="16" Canvas.Top="10" Text="轻按" FontSize="10.5"
+                                           Foreground="{StaticResource T4}" LineHeight="15"/>
+                                <TextBlock x:Name="KbmTapValue" Canvas.Left="16" Canvas.Top="29" Text="未映射"
+                                           FontSize="14" FontWeight="Bold" Foreground="{StaticResource T1}"
+                                           LineHeight="21" Width="168" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Canvas.Left="190" Canvas.Top="20" Text="›" FontSize="15"
+                                           Foreground="{StaticResource T4}" LineHeight="22" Width="20"
+                                           TextAlignment="Right"/>
+                                <Button Tag="0" Click="KbmRow_Click" Cursor="Hand" Width="228" Height="62">
+                                    <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate></Button.Template>
+                                </Button>
+                            </Canvas>
+                        </ContentControl>
+
+                        <ContentControl x:Name="KbmMoreRow" Style="{StaticResource CardSoft}"
+                                        Canvas.Left="24" Canvas.Top="152" Width="228" Height="62">
+                            <Canvas>
+                                <TextBlock x:Name="KbmMoreCaption" Canvas.Left="16" Canvas.Top="10" Text="更多动作"
+                                           FontSize="10.5" Foreground="{StaticResource T4}" LineHeight="15"/>
+                                <TextBlock x:Name="KbmMoreValue" Canvas.Left="16" Canvas.Top="29" Text="需先设轻按"
+                                           FontSize="13" FontWeight="Bold" Foreground="{StaticResource T4}"
+                                           LineHeight="20" Width="168" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Canvas.Left="190" Canvas.Top="20" Text="›" FontSize="15"
+                                           Foreground="{StaticResource T4}" LineHeight="22" Width="20"
+                                           TextAlignment="Right"/>
+                                <Button Tag="4" Click="KbmRow_Click" Cursor="Hand" Width="228" Height="62">
+                                    <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate></Button.Template>
+                                </Button>
+                            </Canvas>
+                        </ContentControl>
+                    </Canvas>
+
+                    <!-- ② 更多动作：双击 / 长按 / 组合键 -->
+                    <Canvas x:Name="KbmMoreView" Visibility="Collapsed">
+                        <TextBlock Canvas.Left="24" Canvas.Top="15" Text="更多动作" FontSize="20" FontWeight="Bold"
+                                   LineHeight="28" Foreground="{StaticResource T1}" Width="150"/>
+                        <Button Canvas.Left="188" Canvas.Top="18" Width="64" Height="24" Content="返回"
+                                Style="{StaticResource GhostButton}" FontSize="10" Click="KbmMoreBack_Click"/>
+                        <Rectangle Canvas.Left="24" Canvas.Top="56" Width="228" Height="1" Fill="#12FFFFFF"/>
+
+                        <ContentControl x:Name="KbmRowDouble" Style="{StaticResource CardSoft}"
+                                        Canvas.Left="24" Canvas.Top="66" Width="228" Height="46">
+                            <Canvas>
+                                <TextBlock Canvas.Left="16" Canvas.Top="14" Text="双击" FontSize="12"
+                                           Foreground="{StaticResource T3}" LineHeight="18" Width="52"/>
+                                <TextBlock x:Name="KbmValDouble" Canvas.Left="72" Canvas.Top="14" Text="未映射"
+                                           FontSize="11.5" Foreground="{StaticResource T4}" LineHeight="18"
+                                           Width="116" TextAlignment="Right" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Canvas.Left="190" Canvas.Top="12" Text="›" FontSize="14"
+                                           Foreground="{StaticResource T4}" LineHeight="22" Width="20"
+                                           TextAlignment="Right"/>
+                                <Button Tag="1" Click="KbmRow_Click" Cursor="Hand" Width="228" Height="46">
+                                    <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate></Button.Template>
+                                </Button>
+                            </Canvas>
+                        </ContentControl>
+
+                        <ContentControl x:Name="KbmRowLong" Style="{StaticResource CardSoft}"
+                                        Canvas.Left="24" Canvas.Top="118" Width="228" Height="46">
+                            <Canvas>
+                                <TextBlock Canvas.Left="16" Canvas.Top="14" Text="长按" FontSize="12"
+                                           Foreground="{StaticResource T3}" LineHeight="18" Width="52"/>
+                                <TextBlock x:Name="KbmValLong" Canvas.Left="72" Canvas.Top="14" Text="未映射"
+                                           FontSize="11.5" Foreground="{StaticResource T4}" LineHeight="18"
+                                           Width="116" TextAlignment="Right" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Canvas.Left="190" Canvas.Top="12" Text="›" FontSize="14"
+                                           Foreground="{StaticResource T4}" LineHeight="22" Width="20"
+                                           TextAlignment="Right"/>
+                                <Button Tag="2" Click="KbmRow_Click" Cursor="Hand" Width="228" Height="46">
+                                    <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate></Button.Template>
+                                </Button>
+                            </Canvas>
+                        </ContentControl>
+
+                        <ContentControl x:Name="KbmRowCombo" Style="{StaticResource CardSoft}"
+                                        Canvas.Left="24" Canvas.Top="170" Width="228" Height="46">
+                            <Canvas>
+                                <TextBlock Canvas.Left="16" Canvas.Top="14" Text="组合键" FontSize="12"
+                                           Foreground="{StaticResource T3}" LineHeight="18" Width="62"/>
+                                <TextBlock x:Name="KbmValCombo" Canvas.Left="80" Canvas.Top="14" Text="未设置"
+                                           FontSize="11.5" Foreground="{StaticResource T4}" LineHeight="18"
+                                           Width="108" TextAlignment="Right" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Canvas.Left="190" Canvas.Top="12" Text="›" FontSize="14"
+                                           Foreground="{StaticResource T4}" LineHeight="22" Width="20"
+                                           TextAlignment="Right"/>
+                                <Button Tag="3" Click="KbmRow_Click" Cursor="Hand" Width="228" Height="46">
+                                    <Button.Template><ControlTemplate TargetType="Button"><Border Background="Transparent"/></ControlTemplate></Button.Template>
+                                </Button>
+                            </Canvas>
+                        </ContentControl>
+                    </Canvas>
+                </Canvas>
+            </ContentControl>
+        </Canvas>
+
+        <!-- ══════════════════ 底部操作（两视图共用）══════════════════ -->
+        <Button Canvas.Left="772" Canvas.Top="700" Width="116" Height="34" Content="恢复默认"
+                Style="{StaticResource GhostButton}" Click="ResetAll_Click"/>
+        <Button x:Name="SaveButton" Canvas.Left="896" Canvas.Top="700" Width="132" Height="34" Content="保存并应用"
+                Style="{StaticResource PrimaryButton}" Click="Save_Click"/>
+
+    </Canvas>
+</UserControl>

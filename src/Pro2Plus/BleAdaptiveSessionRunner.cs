@@ -1,0 +1,180 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Pro2Plus;
+
+public interface IBleAdaptiveTrialBackend
+{
+    bool Connected { get; }
+    Task<BleAdaptiveMeasurement> MeasureAsync(string phase, CancellationToken token);
+    // null means restore/release to the pre-test preference, not proof of interval rollback.
+    Task<bool> RequestAsync(BleAdaptivePresetCandidate? candidate, CancellationToken token);
+    void ReleaseTrialRequest();
+    void Report(string message);
+}
+
+public sealed record BleAdaptiveTrialRecord(string Preset, bool RequestAccepted,
+    BleAdaptiveMeasurement? Measurement, string Decision);
+public sealed record BleAdaptiveRunResult(BleAdaptivePresetCandidate? Selected,
+    BleAdaptiveMeasurement Native, BleAdaptiveMeasurement Final, bool FinalVerified,
+    string Code, IReadOnlyList<BleAdaptiveTrialRecord> Trials);
+
+public interface IBleAdaptivePeerGuard { bool PeersHealthy { get; } }
+
+/// <summary>
+/// Bounded single-connection state machine, independently testable without any radio.
+/// A successful request never substitutes for a complete received-input window.
+/// </summary>
+public static class BleAdaptiveSessionRunner
+{
+    public static async Task<BleAdaptiveRunResult> RunAsync(BleAdaptiveCapabilities capabilities,
+        IBleAdaptiveTrialBackend backend, BleAdaptivePreset? preferred, CancellationToken token)
+    {
+        backend.Report("正在测量原连接 · 10 秒");
+        BleAdaptiveMeasurement native = await backend.MeasureAsync("NATIVE", token);
+        var trials = new List<BleAdaptiveTrialRecord>();
+        token.ThrowIfCancellationRequested();
+        if (!backend.Connected || !native.Sample.Connected)
+            return new(null, native, native with { Sample = native.Sample with { Connected = false } },
+                false, "link_disconnected", trials);
+        if (!BleAdaptivePresetPolicy.IsValidMeasurement(native))
+        {
+            // Timer rounding, a stale packet or an incomplete first window must
+            // not silently turn an empty plan into a completed preset test. One
+            // same-connection retry is bounded and sends no parameter requests.
+            backend.Report("原连接测量无效 · 同连接补测 10 秒（1/1）；尚未发送预设");
+            native = await backend.MeasureAsync("NATIVE_RETRY", token);
+            token.ThrowIfCancellationRequested();
+            if (!backend.Connected || !native.Sample.Connected)
+                return new(null, native, native with { Sample = native.Sample with { Connected = false } },
+                    false, "link_disconnected", trials);
+            if (!BleAdaptivePresetPolicy.IsValidMeasurement(native))
+            {
+                backend.Report("未进行参数测试 · 两次原连接测量均无效；未发送预设");
+                return new(null, native, native, false, "native_measurement_not_ready", trials);
+            }
+        }
+        BleAdaptivePresetPlan plan = BleAdaptivePresetPolicy.CreatePlan(capabilities, native, preferred);
+        if (plan.Candidates.Count == 0)
+            return new(null, native, native, BleAdaptivePresetPolicy.IsValidMeasurement(native), plan.Code, trials);
+
+        BleAdaptiveMeasurement best = native;
+        BleAdaptiveMeasurement latest = native;
+        BleAdaptivePresetCandidate? winner = null;
+        bool preferenceChanged = false, finished = false, restoreFailed = false;
+        bool PeersHealthy() => backend is not IBleAdaptivePeerGuard guard || guard.PeersHealthy;
+        async Task<BleAdaptiveRunResult> RestoreForPeerRegressionAsync()
+        {
+            // Never retain a locally fast preset which slowed another pad.
+            // Restore the pre-test request, not the last locally-best candidate.
+            winner = null;
+            backend.Report("其他手柄输入下降 · 停止测试并恢复原请求");
+            bool restored = await backend.RequestAsync(null, token);
+            if (!restored) backend.ReleaseTrialRequest();
+            var after = backend.Connected ? await backend.MeasureAsync("PEER_RESTORE_VERIFY", token) : latest;
+            finished = true;
+            trials.Add(new("peer_guard", false, after, "peer_rate_regression"));
+            return new(null, native, after, false, restored && PeersHealthy()
+                ? "peer_rate_regression_restored" : "peer_rate_regression_restore_unverified", trials);
+        }
+        BleAdaptiveRunResult DisconnectedResult() => new(null, native,
+            latest with { Sample = latest.Sample with { Connected = false } }, false, "link_disconnected", trials);
+        async Task<bool> RestoreBestAsync(CancellationToken restoreToken)
+        {
+            bool restored = await backend.RequestAsync(winner, restoreToken);
+            if (!restored)
+            {
+                restoreFailed = true;
+                winner = null;
+                backend.ReleaseTrialRequest();
+                backend.Report("此前请求恢复被拒绝，已尝试释放试验参数；清理结果见记录，真实间隔是否恢复需要实测。");
+            }
+            return restored;
+        }
+        try
+        {
+            int index = 0;
+            foreach (BleAdaptivePresetCandidate candidate in plan.Candidates)
+            {
+                token.ThrowIfCancellationRequested();
+                if (!backend.Connected) return DisconnectedResult();
+                if (!PeersHealthy()) return await RestoreForPeerRegressionAsync();
+                if (++index > BleAdaptivePresetPolicy.MaximumTrials) break;
+                backend.Report("正在优化蓝牙 · 方案 " + index + "/" + plan.Candidates.Count + " · " + candidate.DisplayName);
+                // RequestAsync may submit then await negotiation. Cancellation in
+                // that await still needs restoration, even before it returns.
+                preferenceChanged = true;
+                bool accepted = await backend.RequestAsync(candidate, token);
+                if (!accepted)
+                {
+                    trials.Add(new(candidate.Id, false, null, "request_rejected"));
+                    continue;
+                }
+                BleAdaptiveMeasurement after = await backend.MeasureAsync(candidate.Id, token);
+                latest = after;
+                if (!PeersHealthy()) return await RestoreForPeerRegressionAsync();
+                if (!backend.Connected) return DisconnectedResult();
+
+                // 只要这一个 10 秒窗口达到 125Hz（唯一验收标准）就立刻采用并结束：不再走稳定性否决、
+                // 不再尝试剩余预设。7.5ms 间隔的实机通知率约 126~129Hz，低于 125 的方案继续测。
+                if (BleAdaptivePresetPolicy.MeetsTarget(after))
+                {
+                    backend.Report("方案 " + candidate.DisplayName + " 已达 " + after.EffectiveHz.ToString("F1") +
+                        "Hz · 立即采用，结束参数测试");
+                    trials.Add(new(candidate.Id, true, after, "acceptable_target_reached"));
+                    finished = true;
+                    return new(candidate, native, after, true, "target_reached_single_window", trials);
+                }
+
+                BleAdaptivePresetDecision decision = BleAdaptivePresetPolicy.EvaluateCandidate(native, best, after);
+                trials.Add(new(candidate.Id, true, after, decision.Code));
+                if (!decision.Retain)
+                {
+                    if (!await RestoreBestAsync(token)) break;
+                    continue;
+                }
+
+                best = after;
+                winner = candidate;
+            }
+
+            if (!backend.Connected) return DisconnectedResult();
+            backend.Report("方案测试完成 · 正在复核最终连接 10 秒");
+            BleAdaptiveMeasurement final = await backend.MeasureAsync("FINAL", token);
+            if (!PeersHealthy()) return await RestoreForPeerRegressionAsync();
+            // 有候选时把原连接一起纳入比较：复核窗口略降但仍可游玩、且明显优于原生的，
+            // 保留该预设，而不是因为一次抖动退回 60ms 原生。
+            BleAdaptivePresetDecision finalDecision = winner == null
+                ? BleAdaptivePresetPolicy.VerifyFinal(best, final)
+                : BleAdaptivePresetPolicy.VerifyFinal(native, best, final);
+            if (!finalDecision.Retain && winner != null && backend.Connected)
+            {
+                // An unverified winner is not remembered. Restore the original request
+                // and measure what actually happens; request disposal alone is not rollback.
+                winner = null;
+                await RestoreBestAsync(token);
+                final = await backend.MeasureAsync("RESTORE_VERIFY", token);
+                finalDecision = BleAdaptivePresetPolicy.VerifyFinal(native, final);
+            }
+            finished = true;
+            return new(winner, native, final, !restoreFailed && finalDecision.Retain,
+                restoreFailed ? "request_restore_failed" : finalDecision.Code, trials);
+        }
+        finally
+        {
+            // Cancellation/timeout must not leave the last (possibly worse) candidate.
+            // Closing the physical connection is handled by the existing session owner.
+            if (!finished && preferenceChanged && backend.Connected)
+            {
+                try { await RestoreBestAsync(CancellationToken.None); }
+                catch (Exception ex)
+                {
+                    backend.ReleaseTrialRequest();
+                    backend.Report("取消后的请求恢复失败，已尝试释放试验参数；清理结果见记录：" + ex.GetType().Name);
+                }
+            }
+        }
+    }
+}

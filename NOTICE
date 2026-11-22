@@ -1,0 +1,29 @@
+Pro2+
+Copyright 2026 Zeul1o
+
+This product is based on XinHeLianSheng-Pro2-Bridge
+(https://github.com/LeonChrome/XinHeLianSheng-Pro2-Bridge),
+Copyright (c) the XinHeLianSheng-Pro2-Bridge authors and contributors,
+licensed under the Apache License, Version 2.0.
+
+Parts carried over from that project:
+  - Bluetooth (BLE) input and connection tuning: device discovery, parameter
+    negotiation, 7.5 ms policy, rate diagnostics, battery / charge decoding
+  - Haptics and motion: DualSense HID haptic feedback, HD rumble passthrough,
+    rumble queue and pacing, IMU motion pipeline
+
+Third-party components keep their own licenses:
+  - Viiper (GPL-3.0)      https://github.com/Alia5/VIIPER
+  - usbip-win2 (BSD-2-Clause)  https://github.com/vadimgrn/usbip-win2
+  - libusb (LGPL-2.1)     https://github.com/libusb/libusb
+
+libusb is bundled unmodified as a standalone DLL and called via P/Invoke; it can
+be replaced with any compatible build. Its source is available at the repository
+above.
+
+Viiper is shipped as a separate executable and run as a child process over a
+local port; it is not linked or combined with this project's source, so it is
+mere aggregation and does not change the licensing of this project. Its
+corresponding source is available at the Viiper repository above.
+
+The upstream project is not affiliated with this project and does not endorse it.
