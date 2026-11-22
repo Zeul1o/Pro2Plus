@@ -21,8 +21,8 @@
 
 | Build | Download | Size |
 | :--: | :-- | :-- |
-| English UI | **[⬇ Download Pro2+.exe](https://github.com/Zeul1o/Pro2Plus/releases/download/v1.0.0/Pro2Plus-1.0.0-en.exe)**<br><sub>Pro2Plus-1.0.0-en.exe</sub> | ~116 MB |
-| 中文界面 | **[⬇ 下载中文版 Pro2+.exe](https://github.com/Zeul1o/Pro2Plus/releases/download/v1.0.0/Pro2Plus-1.0.0.exe)**<br><sub>Pro2Plus-1.0.0.exe</sub> | ~116 MB |
+| English UI | **[⬇ Download Pro2+.exe](https://github.com/Zeul1o/Pro2Plus/releases/download/v1.0.2/Pro2+-1.0.2-en.exe)**<br><sub>Pro2+-1.0.2-en.exe</sub> | ~116 MB |
+| 中文界面 | **[⬇ 下载中文版 Pro2+.exe](https://github.com/Zeul1o/Pro2Plus/releases/download/v1.0.2/Pro2+-1.0.2.exe)**<br><sub>Pro2+-1.0.2.exe</sub> | ~116 MB |
 
 - On first launch it installs the **USBIP driver** once (the installer is embedded in the exe, no internet needed, one admin prompt). After that you are ready to go.
 
