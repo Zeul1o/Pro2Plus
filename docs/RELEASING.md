@@ -44,7 +44,20 @@ gh release create v1.1.0 dist/Pro2+.exe dist/Pro2+-en.exe \
   --repo Zeul1o/Pro2Plus --title "Pro2+ v1.1.0" --notes-file <发布说明.md>
 ```
 
-发版说明建议单独写一个 Markdown 文件再 `--notes-file` 引入，避免命令行转义问题。
+发版说明必须单独写成 Markdown 文件，用 `--notes-file` 引入，避免命令行转义问题。可复制
+`docs/RELEASE_NOTES_TEMPLATE.md` 作为起点。
+
+## 发布说明必含内容
+
+每次发版的说明都必须带 **来源 / Credits** 一节（中英双语），写明：
+
+- 本项目基于 `LeonChrome/XinHeLianSheng-Pro2-Bridge`（Apache-2.0）开发，沿用的两条链路
+- 命名空间等改动已在 `NOTICE` 中声明
+- 第三方组件及其许可证：Viiper（GPL-3.0）、usbip-win2（BSD-2-Clause）、libusb（LGPL-2.1）
+- 随包 `viiper-haptic-v2.8.exe` 是上游改造构建，对应源码位于上游仓库的
+  `source/final-three-in-one/tools/viiper/haptic-src`（`pro2-v3.2.7`）
+
+不要因为「不是本次改动」就删掉这一节：它随每个二进制一起分发，是接收者能看到的主要来源声明。
 
 ## 公开仓库的历史形态
 
