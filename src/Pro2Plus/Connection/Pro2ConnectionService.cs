@@ -41,6 +41,9 @@ public sealed class Pro2ConnectionService : IDisposable
     private volatile string? lastFirmwareText;
 
     private CancellationTokenSource? _connectCts;
+    // 连接令牌的换手必须串行：否则「取消」会命中已经被释放的旧令牌。
+    private readonly object _connectCtsGate = new();
+    private readonly List<CancellationTokenSource> _connectScopes = [];
     private Task _linkCloseTask = Task.CompletedTask;
     private readonly object _closeTaskGate = new();
 
@@ -214,7 +217,7 @@ public sealed class Pro2ConnectionService : IDisposable
             Interlocked.Exchange(ref _autoRetryAfterTicks,
                 Stopwatch.GetTimestamp() + (long)(5 * Stopwatch.Frequency));
 
-            _connectCts?.Cancel();
+            CancelConnect();
             Publish(Pro2LinkKind.None, Pro2LinkPhase.Idle, "未连接", "");
             _ = ConnectAsync();
         }
@@ -246,10 +249,7 @@ public sealed class Pro2ConnectionService : IDisposable
 
         _userDisconnected = false;
 
-        _connectCts?.Cancel();
-        _connectCts?.Dispose();
-        var cts = new CancellationTokenSource();
-        _connectCts = cts;
+        CancellationTokenSource cts = BeginConnectScope();
         StopPairingWatch();
 
         try
@@ -799,14 +799,12 @@ public sealed class Pro2ConnectionService : IDisposable
     {
         if (_disposed || _userDisconnected || IsConnected) return;
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
+        // 旧写法是 using + 直接替换字段：方法一返回令牌就被释放，
+        // 而 _connectCts 还指着它，下一次点「断开连接」就抛 ObjectDisposedException。
+        CancellationTokenSource cts = BeginConnectScope(TimeSpan.FromSeconds(25));
         try
         {
-            // 把可能还在跑的连接流程顶掉，避免两个 OpenAsync 抢同一个适配器。
-            try { _connectCts?.Cancel(); } catch { }
-            _connectCts?.Dispose();
-            _connectCts = cts;
-
+            // BeginConnectScope 会取消上一轮流程，避免两个 OpenAsync 抢同一个适配器。
             Publish(Pro2LinkKind.Bluetooth, Pro2LinkPhase.Opening, "正在连接…",
                 string.IsNullOrWhiteSpace(candidate.Name) ? "手柄已进入配对" : candidate.Name);
 
@@ -832,6 +830,10 @@ public sealed class Pro2ConnectionService : IDisposable
             Log?.Invoke("[LINK] ble_pairing_connect_error " + ex.GetType().Name);
             await RetryPairingWatchAsync().ConfigureAwait(false);
         }
+        finally
+        {
+            ClearConnectScope(cts);
+        }
     }
 
     private async Task RetryPairingWatchAsync()
@@ -852,13 +854,66 @@ public sealed class Pro2ConnectionService : IDisposable
     public void Disconnect()
     {
         _userDisconnected = true;
-        _connectCts?.Cancel();
 
-        DropInputSession();
-        StopPairingWatch();
+        // 任何一步都不许把异常抛回 UI 线程：这里抛一次，「断开连接」就永远点不动，
+        // USB 抢占也会被同一个异常吞掉（表现为插线不再热切换）。
+        try { CancelConnect(); }
+        catch (Exception ex) { Log?.Invoke("[LINK] disconnect_cancel_error " + ex.GetType().Name); }
+        try { DropInputSession(); }
+        catch (Exception ex) { Log?.Invoke("[LINK] disconnect_drop_error " + ex.GetType().Name); }
+        try { StopPairingWatch(); }
+        catch (Exception ex) { Log?.Invoke("[LINK] disconnect_watch_error " + ex.GetType().Name); }
+
         Publish(Pro2LinkKind.None, Pro2LinkPhase.Idle, "未连接",
             "插上 USB 线，或让手柄进入蓝牙配对");
         BeginCloseQuietly();
+    }
+
+    /// <summary>
+    /// 换一枚新的连接令牌：旧的只取消、不释放。旧令牌上可能还有别的线程正要调 Cancel，
+    /// 先 Dispose 会让那一次调用抛 ObjectDisposedException —— 那正是「断开连接按不动」的成因。
+    /// </summary>
+    private CancellationTokenSource BeginConnectScope(TimeSpan? timeout = null)
+    {
+        CancellationTokenSource cts = timeout is null
+            ? new CancellationTokenSource()
+            : new CancellationTokenSource(timeout.Value);
+
+        CancellationTokenSource? previous;
+        lock (_connectCtsGate)
+        {
+            previous = _connectCts;
+            _connectCts = cts;
+            _connectScopes.Add(cts);
+            if (_connectScopes.Count > 16) _connectScopes.RemoveAt(0);
+        }
+
+        CancelQuietly(previous);
+        return cts;
+    }
+
+    /// <summary>本轮连接结束时让出令牌位，但不动别人后来换上的令牌。</summary>
+    private void ClearConnectScope(CancellationTokenSource cts)
+    {
+        lock (_connectCtsGate)
+        {
+            if (ReferenceEquals(_connectCts, cts)) _connectCts = null;
+        }
+    }
+
+    private void CancelConnect()
+    {
+        CancellationTokenSource? cts;
+        lock (_connectCtsGate) cts = _connectCts;
+        CancelQuietly(cts);
+    }
+
+    private static void CancelQuietly(CancellationTokenSource? cts)
+    {
+        if (cts is null) return;
+        try { cts.Cancel(); }
+        catch (ObjectDisposedException) { }
+        catch (AggregateException) { }
     }
 
     private void BeginCloseQuietly()
@@ -1043,8 +1098,20 @@ public sealed class Pro2ConnectionService : IDisposable
         StopPairingWatch();
         _usbWatch?.Dispose();
         _usbWatch = null;
-        _connectCts?.Cancel();
-        _connectCts?.Dispose();
+
+        CancellationTokenSource[] scopes;
+        lock (_connectCtsGate)
+        {
+            scopes = _connectScopes.ToArray();
+            _connectScopes.Clear();
+            _connectCts = null;
+        }
+        foreach (CancellationTokenSource scope in scopes)
+        {
+            CancelQuietly(scope);
+            try { scope.Dispose(); } catch { }
+        }
+
         _wired.Dispose();
         _ble.Dispose();
     }

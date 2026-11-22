@@ -49,7 +49,7 @@ internal static class ViewModelFormatting
         (raw / (GamepadState.AxisCenter / 100.0)).ToString("0.0") + "%";
 
     internal static double ClampScale(double value) =>
-        ClampFinite(value, 2, 0.25, 4.0, 1.0);
+        ClampFinite(value, 2, 0.25, 5.0, 1.0);
 
     internal static string DescribeUsbipSource(string source) => source switch
     {

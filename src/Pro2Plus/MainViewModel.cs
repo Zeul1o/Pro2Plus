@@ -119,6 +119,19 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
         }
         Pro2GyroBiasStore.BiasSaved += RefreshGyroBiasText;
         Pro2GyroBiasStore.DeviceKeyChanged += _ => RefreshGyroBiasText();
+
+        // C 键切换陀螺仪后落盘成功，设置页的草稿和开关一起跟上；
+        // 这样重启、换有线/无线、重建会话都沿用最后一次切换的状态。
+        GyroConfig.AllowPersist = !previewOnly;
+        GyroConfig.StartEnabledPersisted += enabled =>
+        {
+            tuningGyroStartEnabled = enabled;
+            if (tuningConfig != null) tuningConfig.Gyro.StartEnabled = enabled;
+            System.Windows.Application? app = System.Windows.Application.Current;
+            void Raise() => OnPropertyChanged(nameof(TuningGyroStartEnabled));
+            if (app == null || app.CheckAccess()) Raise();
+            else app.Dispatcher.BeginInvoke(new Action(Raise));
+        };
         linkService.InputSessionChanged += OnLinkInputSessionChanged;
         InitializeRearButtonSettings();
         inputSource = pro2Slots[0].InputSource;

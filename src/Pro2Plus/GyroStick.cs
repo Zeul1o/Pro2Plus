@@ -34,7 +34,7 @@ public sealed class GyroSection
         get
         {
             double scale = double.IsFinite(SensitivityScale) && SensitivityScale > 0
-                ? Math.Clamp(SensitivityScale, 0.25, 4.0)
+                ? Math.Clamp(SensitivityScale, 0.25, 5.0)
                 : 1.0;
             return FullSpeedDps / scale;
         }
@@ -119,6 +119,33 @@ public sealed class GyroConfig
             return false;
         }
     }
+
+    /// <summary>
+    /// C 键切换陀螺仪时只改 gyro.json 的 start_enabled 一项：
+    /// 不能把设置页里还没点保存的草稿顺手写进磁盘。
+    /// </summary>
+    public static void PersistStartEnabled(bool enabled)
+    {
+        if (!AllowPersist) return;
+        try
+        {
+            GyroConfig stored = LoadOrDefault(out _);
+            stored.Gyro.StartEnabled = enabled;
+            File.WriteAllText(DefaultPath, JsonSerializer.Serialize(stored,
+                new JsonSerializerOptions { WriteIndented = true }));
+            StartEnabledPersisted?.Invoke(enabled);
+        }
+        catch
+        {
+            // 配置目录只读时保留内存状态，至少本次运行内仍然沿用最后一次切换。
+        }
+    }
+
+    /// <summary>落盘成功后通知界面同步「启动陀螺仪」开关。</summary>
+    public static event Action<bool>? StartEnabledPersisted;
+
+    /// <summary>预览 / 自检模式不写用户配置。</summary>
+    public static bool AllowPersist { get; set; } = true;
 
     public static GyroConfig LoadOrDefault(out string note)
     {
@@ -593,6 +620,7 @@ public sealed class GyroStick
     public void Toggle()
     {
         GyroOn = !GyroOn;
+        PersistEnabled();
         // 切换时清滤波状态：关闭期间若一直在甩，抑制会累积到 1.0，
         // 切回来第一下会被吃掉（表现为「切回来拉不动」）。
         filter.Reset();
@@ -601,7 +629,17 @@ public sealed class GyroStick
     public void SetEnabled(bool on)
     {
         GyroOn = on;
+        PersistEnabled();
         filter.Reset();
+    }
+
+    /// <summary>
+    /// 把当前开关同步进配置并落盘：下次启动、换连接方式、重建会话都沿用最后一次切换。
+    /// </summary>
+    private void PersistEnabled()
+    {
+        config.Gyro.StartEnabled = GyroOn;
+        GyroConfig.PersistStartEnabled(GyroOn);
     }
 
     /// 处理一帧手柄状态。

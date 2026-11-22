@@ -1630,7 +1630,7 @@ public static class AuxiliaryRewriteSmoke
         !double.IsFinite(value) ? fallback : Math.Clamp(Math.Round(value, 3), min, max);
 
     private static double LegacyClampScale(double value) =>
-        double.IsFinite(value) ? Math.Clamp(Math.Round(value, 2), 0.25, 4.0) : 1.0;
+        double.IsFinite(value) ? Math.Clamp(Math.Round(value, 2), 0.25, 5.0) : 1.0;
 
     private static string LegacyLowRateNumber(double value) => double.IsFinite(value) && value >= 0
         ? value.ToString("F1") : "未获取";
@@ -1683,6 +1683,12 @@ public static class AuxiliaryRewriteSmoke
                     ViewModelFormatting.RangeHint(left, right) == LegacyRangeHint(left, right), ref cases, ref bad);
             }
         }
+
+        // 灵敏度上限必须与界面滑杆刻度的 5.0× 一致，否则拖到头只显示 4.00。
+        check("formatting", "sensitivity top 5.0",
+            Equals(ViewModelFormatting.ClampScale(5.0), 5.0), ref cases, ref bad);
+        check("formatting", "sensitivity above top clamps",
+            Equals(ViewModelFormatting.ClampScale(9.0), 5.0), ref cases, ref bad);
 
         for (int i = 0; i < 800; i++)
         {

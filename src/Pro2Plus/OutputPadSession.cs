@@ -169,7 +169,7 @@ public sealed class OutputPadSession : IAsyncDisposable
     public void ApplySensitivity(double scale)
     {
         if (!double.IsFinite(scale) || scale <= 0) return;
-        gyroConfig.Gyro.SensitivityScale = Math.Clamp(scale, 0.25, 4.0);
+        gyroConfig.Gyro.SensitivityScale = Math.Clamp(scale, 0.25, 5.0);
     }
 
     /// <summary>

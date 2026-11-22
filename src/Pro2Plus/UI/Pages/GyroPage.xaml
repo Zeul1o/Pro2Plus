@@ -22,10 +22,10 @@
                                Geometry="{StaticResource GeoGyro}" StrokeWidth="10" MarkOpacity="0.15"/>
 
                 <Slider x:Name="SliderGyro" Canvas.Left="24" Canvas.Top="291" Width="338" Height="26"
-                        Style="{StaticResource SliderThick}" Minimum="0.25" Maximum="4.0"
+                        Style="{StaticResource SliderThick}" Minimum="0.25" Maximum="5.0"
                         Value="{Binding SensitivityScale, Mode=TwoWay}"/>
-                <TextBlock x:Name="TickGyro1" Canvas.Left="24" Canvas.Top="320" Text="0.1×" FontSize="10.5" Foreground="{StaticResource T4}" Width="44"/>
-                <TextBlock x:Name="TickGyro2" Canvas.Left="171" Canvas.Top="320" Text="2.5×" FontSize="10.5" Foreground="{StaticResource T4}"
+                <TextBlock x:Name="TickGyro1" Canvas.Left="24" Canvas.Top="320" Text="0.25×" FontSize="10.5" Foreground="{StaticResource T4}" Width="44"/>
+                <TextBlock x:Name="TickGyro2" Canvas.Left="171" Canvas.Top="320" Text="2.6×" FontSize="10.5" Foreground="{StaticResource T4}"
                            Width="44" TextAlignment="Center"/>
                 <TextBlock x:Name="TickGyro3" Canvas.Left="318" Canvas.Top="320" Text="5.0×" FontSize="10.5" Foreground="{StaticResource T4}"
                            Width="44" TextAlignment="Right"/>
