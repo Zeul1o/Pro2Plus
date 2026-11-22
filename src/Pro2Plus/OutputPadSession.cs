@@ -1032,6 +1032,10 @@ public sealed class OutputPadSession : IAsyncDisposable
                         " raw_pitch=" + gyroStick.LastPitch.ToString("F1") +
                         " out=(" + gyroStick.LastYawOut.ToString("F2") + "," +
                         gyroStick.LastPitchOut.ToString("F2") + ")" +
+                        " gyroU=(" + gyroStick.LastGyroUnitX.ToString("F3") + "," +
+                        gyroStick.LastGyroUnitY.ToString("F3") + ")" +
+                        " phys=(" + gyroStick.LastPhysUnitX.ToString("F3") + "," +
+                        gyroStick.LastPhysUnitY.ToString("F3") + ")" +
                         " stick=(" + gyroStick.LastRx.ToString("F2") + "," +
                         gyroStick.LastRy.ToString("F2") + ")" +
                         " imu=" + state.SwitchRawImuSamples.Length +

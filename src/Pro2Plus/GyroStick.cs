@@ -504,13 +504,24 @@ public sealed class GyroStick
     // 静止检测：用最近若干帧角速度的「极差」判断有没有在动。
     // 这比「输出接近 0」可靠得多——零偏本身就偏 10dps 时，输出永远接近不了 0，
     // 旧逻辑会一直不进修正区，于是摇杆被顶死一个方向（实测向右/向下漂移）。
-    private const int StillFrames = 24;
-    private const double StillSpreadDps = 2.0;
-    private const double BiasTrackTauSec = 0.6;
+    //
+    // 但极差只能排除「抖动」，排不掉「匀速转动」：以很小的角度持续朝一个方向转时，
+    // 角速度几乎是常数，极差接近 0，会被误判成静止，于是真实输入被一点点吸收进零偏
+    // ——表现为准星转一会儿突然不动、反向却双倍敏感、再转回来完全推不动。
+    // 所以必须再加一条绝对角速度上限，并限制累计修正量。
+    private const int StillFrames = 48;
+    private const double StillSpreadDps = 1.0;
+    private const double StillAbsDps = 1.1;
+    private const double BiasTrackTauSec = 2.0;
+    private const double BiasTrackMaxDriftDps = 1.5;
     private readonly double[] stillYaw = new double[StillFrames];
     private readonly double[] stillPitch = new double[StillFrames];
     private int stillIndex;
     private int stillCount;
+
+    /// <summary>开机学习/档案加载时的零偏，用来限制运行中的累计修正量。</summary>
+    private double biasAnchorYaw;
+    private double biasAnchorPitch;
 
     /// <summary>零点是用「兜底估算」得到的（学习期手柄在动）。</summary>
     public bool RoughZero { get; private set; }
@@ -559,6 +570,8 @@ public sealed class GyroStick
         {
             biasYaw = saved.YawBiasDps;
             biasPitch = saved.PitchBiasDps;
+            biasAnchorYaw = biasYaw;
+            biasAnchorPitch = biasPitch;
             zeroReady = true;
             RoughZero = false;
             BiasSource = "saved";
@@ -569,6 +582,8 @@ public sealed class GyroStick
             zeroReady = false;
             BiasFromSaved = false;
             BiasSource = "learning";
+            biasAnchorYaw = 0.0;
+            biasAnchorPitch = 0.0;
         }
         learnCount = 0;
         learnSec = 0;
@@ -586,6 +601,8 @@ public sealed class GyroStick
         Pro2GyroBiasStore.Clear();
         biasYaw = 0;
         biasPitch = 0;
+        biasAnchorYaw = 0.0;
+        biasAnchorPitch = 0.0;
         zeroReady = false;
         RoughZero = false;
         BiasFromSaved = false;
@@ -613,6 +630,10 @@ public sealed class GyroStick
     /// </summary>
     public double LastGyroUnitX { get; private set; }
     public double LastGyroUnitY { get; private set; }
+
+    /// <summary>本帧实际参与叠加的物理右摇杆值（已过中位死区），诊断用。</summary>
+    public double LastPhysUnitX { get; private set; }
+    public double LastPhysUnitY { get; private set; }
 
     /// <summary>重力方向估计（项目坐标），诊断用。</summary>
     public (double X, double Y, double Z) GravityVector => space.Gravity;
@@ -687,6 +708,8 @@ public sealed class GyroStick
             LastRy = physRy;
             LastGyroUnitX = 0.0;
             LastGyroUnitY = 0.0;
+            LastPhysUnitX = physRx;
+            LastPhysUnitY = physRy;
             return state;
         }
 
@@ -721,6 +744,8 @@ public sealed class GyroStick
         {
             LastRx = physRx;
             LastRy = physRy;
+            LastPhysUnitX = physRx;
+            LastPhysUnitY = physRy;
             return state;
         }
 
@@ -754,10 +779,19 @@ public sealed class GyroStick
         // 键鼠模式需要「纯陀螺」分量（不含物理右摇杆），单独暴露出来。
         LastGyroUnitX = gx;
         LastGyroUnitY = gy;
+        LastPhysUnitX = physRx;
+        LastPhysUnitY = physRy;
         if (config.Gyro.StickPassthrough)
         {
-            rx = GyroFilter.Clamp(physRx + gx, -1.0, 1.0);
-            ry = GyroFilter.Clamp(physRy + gy, -1.0, 1.0);
+            // 物理中位死区：拇指轻搭在摇杆上时的静态偏置（实测可达 40 LSB）会整体
+            // 平移合成值，再被死区非线性放大成单向漂移。这里先把它归零再叠加。
+            double physFloor = GyroFilter.Clamp(config.Gyro.RightStickDeadzone * 0.25, 0.0, 0.05);
+            double px = KillCenter(physRx, physFloor);
+            double py = KillCenter(physRy, physFloor);
+            LastPhysUnitX = px;
+            LastPhysUnitY = py;
+            rx = GyroFilter.Clamp(px + gx, -1.0, 1.0);
+            ry = GyroFilter.Clamp(py + gy, -1.0, 1.0);
         }
 
         double dz = config.Gyro.RightStickDeadzone;
@@ -809,6 +843,8 @@ public sealed class GyroStick
                 {
                     biasYaw = my;
                     biasPitch = mp;
+                    biasAnchorYaw = biasYaw;
+                    biasAnchorPitch = biasPitch;
                     zeroReady = true;
                     BiasSource = "auto_still";
                     Pro2GyroBiasStore.SaveYawPitch(biasYaw, biasPitch, BiasSource, force: true);
@@ -822,6 +858,8 @@ public sealed class GyroStick
             {
                 biasYaw = sumYaw / learnCount;
                 biasPitch = sumPitch / learnCount;
+                biasAnchorYaw = biasYaw;
+                biasAnchorPitch = biasPitch;
                 zeroReady = true;
                 RoughZero = true;
                 BiasSource = "auto_fallback";
@@ -840,10 +878,11 @@ public sealed class GyroStick
     }
 
     /// <summary>
-    /// 只要「最近 24 帧的角速度几乎不变」就认为手柄没在动，用 0.6 秒的
-    /// 时间常数把零偏慢慢拉向当前值。这样：
-    ///   * 开机时零偏学偏了（转动中被当成静止），静止 1~2 秒就能自己纠回来；
-    ///   * 真正在瞄准时角速度一直在变，极差远超阈值，零偏完全冻结，不吃输入。
+    /// 只有「最近 48 帧的角速度几乎不变、且绝对值足够小」才认为手柄没在动，
+    /// 用 2 秒的时间常数把零偏慢慢拉向当前值。这样：
+    ///   * 开机时零偏学偏了（转动中被当成静止），真正静置几秒能自己纠回来；
+    ///   * 真正在瞄准时角速度一直在变，零偏完全冻结，不吃输入；
+    ///   * 缓慢匀速转动（极差同样很小）由绝对角速度上限挡掉，不会被吸进零偏。
     /// </summary>
     private void TrackBiasWhileStill(double yaw, double pitch, double dt)
     {
@@ -869,9 +908,24 @@ public sealed class GyroStick
 
         if (maxY - minY > StillSpreadDps || maxP - minP > StillSpreadDps) return;
 
+        // 极差小只说明「没有抖动」，匀速转动也满足。必须再要求绝对角速度足够小，
+        // 否则「以很小的角度持续朝一个方向转」会被当成静止，把真实输入吸收掉。
+        if (Math.Abs(yaw) > StillAbsDps || Math.Abs(pitch) > StillAbsDps) return;
+
         double a = 1.0 - Math.Exp(-dt / BiasTrackTauSec);
-        biasYaw += (yaw - biasYaw) * a;
-        biasPitch += (pitch - biasPitch) * a;
+        double nextYaw = biasYaw + (yaw - biasYaw) * a;
+        double nextPitch = biasPitch + (pitch - biasPitch) * a;
+
+        // 累计修正上限：真零偏的温漂通常是零点几 dps，超过这个量级说明
+        // 更可能是「转得很慢但确实在转」，宁可冻结也不要把它吃掉。
+        if (Math.Abs(nextYaw - biasAnchorYaw) > BiasTrackMaxDriftDps ||
+            Math.Abs(nextPitch - biasAnchorPitch) > BiasTrackMaxDriftDps)
+        {
+            return;
+        }
+
+        biasYaw = nextYaw;
+        biasPitch = nextPitch;
         // 继续缓慢纠偏的结果也要落盘，下次连接直接用最新版。
         // 写入带 3 秒节流，避免每帧都碰配置文件。
         Pro2GyroBiasStore.SaveYawPitch(biasYaw, biasPitch, BiasSource);
@@ -881,10 +935,38 @@ public sealed class GyroStick
     {
         double a = Math.Abs(v);
         if (a < 1e-6) return 0.0;
-        if (a < dz) return 0.0;
+        dz = GyroFilter.Clamp(dz, 0.0, 0.95);
+        anti = GyroFilter.Clamp(anti, 0.0, 1.0);
+
+        // 噪声门：低于死区 1/5 的输入当作静止噪声，直接归零。
+        // 陀螺静止噪声实测有 0.5~2 dps，不挡掉会让摇杆在零点持续微动。
+        double gate = dz * 0.2;
+        if (a <= gate) return 0.0;
+
+        // 软膝：死区内从 gate 连续抬到 anti（端点值等于 anti，与外侧衔接）。
+        // 旧写法在 |v| 越过 dz 时从 0 直接跳到 anti（默认 0.18 ≈ 370 LSB），
+        // 小角度左右抖动就被放大成「0 ↔ 0.18」的来回跳，表现为颗粒感和单侧漂移。
+        if (dz > 1e-6 && a < dz)
+        {
+            double t = (a - gate) / Math.Max(dz - gate, 1e-6);
+            double shaped = anti * t * t;
+            return Math.Abs(shaped) < 1.0 / 2047.0 ? 0.0 : Math.CopySign(shaped, v);
+        }
+
         double output = (a - dz) / Math.Max(1.0 - dz, 1e-6);
         if (anti > 0.0) output = anti + output * (1.0 - anti);
-        return Math.CopySign(GyroFilter.Clamp(output, 0.0, 1.0), v);
+        output = GyroFilter.Clamp(output, 0.0, 1.0);
+        return Math.Abs(output) < 1.0 / 2047.0 ? 0.0 : Math.CopySign(output, v);
+    }
+
+    /// <summary>
+    /// 物理右摇杆的中位死区。passthrough 时拇指轻搭在摇杆上就会带来 20~60 LSB 的
+    /// 静态偏置，直接叠加会把合成值整体推向一侧，再被死区非线性放大成单向漂移。
+    /// 这里只吃掉中位附近的一小段，超过它的真实推杆原样保留，不改变行程比例。
+    /// </summary>
+    private static double KillCenter(double v, double floor)
+    {
+        return Math.Abs(v) <= floor ? 0.0 : v;
     }
 
     private static double AxisToUnit(ushort value)

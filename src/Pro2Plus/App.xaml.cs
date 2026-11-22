@@ -136,6 +136,21 @@ public partial class App : System.Windows.Application
             return;
         }
 
+        // 陀螺→右摇杆离线仿真：合成 IMU 输入，复现小角度抖动偏置与回中。
+        if (Environment.GetEnvironmentVariable("PRO2_GYRO_SIM") == "1")
+        {
+            string simReport = GyroDriftSim.Run();
+            string? simPath = Environment.GetEnvironmentVariable("PRO2_GYRO_SIM_OUT");
+            if (!string.IsNullOrWhiteSpace(simPath))
+            {
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(simPath)!);
+                System.IO.File.WriteAllText(simPath, simReport);
+            }
+            Environment.ExitCode = 0;
+            Shutdown(0);
+            return;
+        }
+
         // 摇杆链路自检：不接手柄，用合成的 0x05 报告核对零位 / 死区的最终输出。
         if (Environment.GetEnvironmentVariable("PRO2_STICK_TEST") == "1")
         {

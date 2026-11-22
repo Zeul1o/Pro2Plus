@@ -21,8 +21,8 @@
 
 | 版本 | 下载 | 大小 |
 | :--: | :-- | :-- |
-| 中文版 | **[⬇ 点击下载 Pro2+.exe](https://github.com/Zeul1o/Pro2Plus/releases/download/v1.0.2/Pro2+-1.0.2.exe)**<br><sub>Pro2+-1.0.2.exe</sub> | 约 116 MB |
-| English | **[⬇ Download Pro2+ (English UI)](https://github.com/Zeul1o/Pro2Plus/releases/download/v1.0.2/Pro2+-1.0.2-en.exe)**<br><sub>Pro2+-1.0.2-en.exe</sub> | 约 116 MB |
+| 中文版 | **[⬇ 点击下载 Pro2+.exe](https://github.com/Zeul1o/Pro2Plus/releases/download/v1.0.3/Pro2+-1.0.3.exe)**<br><sub>Pro2+-1.0.3.exe</sub> | 约 116 MB |
+| English | **[⬇ Download Pro2+ (English UI)](https://github.com/Zeul1o/Pro2Plus/releases/download/v1.0.3/Pro2+-1.0.3-en.exe)**<br><sub>Pro2+-1.0.3-en.exe</sub> | 约 116 MB |
 
 - 首次运行会装一次 **USBIP 驱动**（安装包已内置在 exe 里，不需要联网，会弹一次管理员确认），装完即可开始使用
 
