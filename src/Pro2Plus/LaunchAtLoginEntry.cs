@@ -13,6 +13,9 @@ public static class LaunchAtLoginEntry
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string ValueName = "Pro2Plus";
 
+    /// <summary>自启时一并写入的参数：进程起来后只保留托盘图标，不弹主界面。</summary>
+    internal const string TrayStartArgument = "--tray";
+
     public static bool IsEnabled()
     {
         try
@@ -37,8 +40,12 @@ public static class LaunchAtLoginEntry
             return;
         }
 
-        key.SetValue(ValueName, Quote(ResolveExecutable()), RegistryValueKind.String);
+        key.SetValue(ValueName, BuildRunValue(ResolveExecutable()), RegistryValueKind.String);
     }
+
+    /// <summary>Run 键里要写的完整命令：带引号的 exe 路径 + 托盘启动参数。</summary>
+    internal static string BuildRunValue(string executablePath) =>
+        Quote(executablePath) + " " + TrayStartArgument;
 
     // 单文件发布时 ProcessPath 已是解包后的进程路径，优先用它；退回主模块路径。
     private static string ResolveExecutable()

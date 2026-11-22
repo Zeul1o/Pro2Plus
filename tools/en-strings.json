@@ -262,5 +262,10 @@
   "真实输入未优于已保留路线，恢复此前最佳路线。": "Real input did not beat the retained route; restoring the previous best route.",
   "连接、输入新鲜度、完整窗口或解析完整性未通过，不保留该预设。": "Connection, input freshness, full window or parse integrity did not pass; the preset is not retained.",
   "通知间隙明显恶化，不以较高平均频率掩盖卡顿。": "Notification gaps got clearly worse; a higher average rate does not hide stalls.",
-  "频率处于测量容差内，但通知间隙明显改善，暂保留较稳定路线。": "The rate is within measurement tolerance, but notification gaps improved clearly; keeping the steadier route for now."
+  "频率处于测量容差内，但通知间隙明显改善，暂保留较稳定路线。": "The rate is within measurement tolerance, but notification gaps improved clearly; keeping the steadier route for now.",
+  "启动": "Startup",
+  "开机自启": "Launch at login",
+  "登录 Windows 后自动启动，直接收进托盘，不弹主界面": "Start with Windows and go straight to the tray, without a main window",
+  "关闭窗口即退出；最小化只收进托盘。托盘图标左键打开主界面，右键可导出连接诊断或退出。": "Closing the window quits; minimizing only hides it to the tray. Left-click the tray icon to open the main window, right-click to export diagnostics or quit.",
+  "写入当前用户的启动项（HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run）": "Writes the per-user startup entry (HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run)"
 }

@@ -232,6 +232,13 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
         runtimeBatteryRefreshEnabled = userSettings.RuntimeBatteryRefreshEnabled;
         launchAtLoginEnabled = !previewOnly && userSettings.LaunchAtLoginEnabled && LaunchAtLoginEntry.IsEnabled();
         autoReconnectOnStartupEnabled = userSettings.AutoReconnectOnStartupEnabled;
+        if (launchAtLoginEnabled)
+        {
+            // 老版本写的启动项没有 --tray，登录后仍会弹主界面。这里补一次参数，
+            // 让「自启即进托盘」对存量用户也生效。
+            try { LaunchAtLoginEntry.SetEnabled(true); }
+            catch { /* 注册表不可写时保持原状，用户可在设置页重开关一次 */ }
+        }
         if (userSettings.LaunchAtLoginEnabled != launchAtLoginEnabled)
         {
             userSettings.LaunchAtLoginEnabled = launchAtLoginEnabled;

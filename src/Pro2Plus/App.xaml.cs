@@ -214,7 +214,19 @@ public partial class App : System.Windows.Application
         MainWindow window = new();
         if (uiSmoke) window.ShowActivated = false;
         MainWindow = window;
-        window.Show();
+        // 开机自启走 --tray：托盘图标在窗口构造时已创建，这里不 Show()，
+        // 用户点托盘再进入主界面。OnExplicitShutdown 由 MainWindow_Closed 收尾。
+        bool trayLaunch = Array.Exists(e.Args, argument =>
+            string.Equals(argument, LaunchAtLoginEntry.TrayStartArgument, StringComparison.OrdinalIgnoreCase));
+        if (trayLaunch)
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            Connection.LinkDebug.Write("APP START tray_launch=1 window_shown=0");
+        }
+        else
+        {
+            window.Show();
+        }
         // 探针要等用户配对，不能被冒烟的自动关窗打断。
         bool stickProbe = Environment.GetEnvironmentVariable("PRO2_STICK_PROBE") == "1";
         if (uiSmoke && !stickProbe) _ = FinishUiSmokeAsync(window);
