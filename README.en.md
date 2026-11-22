@@ -68,7 +68,7 @@ Wired: just plug in a USB-C cable — it is detected and connected automatically
 
 ![Connect page](docs/shots-en/connect.webp)
 
-**Button mapping · PS5 layout**: the pad model on the left is display-only; pick one of the four extra buttons (GL / GR paddles, capture, Home) with the chips below it and change its mapping on the right. Press a button to test it — the final virtual-controller output lights the corresponding button on the model, and triggers show in the large badge on the right.
+**Button mapping · PS5 layout**: supports arbitrary mapping of the four extra buttons — GL / GR paddles, capture and Home. Press any button to test the output, which is highlighted on the model.
 
 ![Button mapping PS5](docs/shots-en/mapping-ps5.webp)
 
