@@ -85,12 +85,24 @@ public partial class MainWindow : Window
             Visible = true
         };
 
-        // 右键菜单：导出连接诊断（回传排障用）+ 退出；模式切换仍在主界面做，避免后台误起设备。
+        // 右键菜单：断开连接 / 导出连接诊断 / 退出。
+        // 断开走和主界面按钮同一条链路，托盘里也能直接断开，不必先打开窗口。
         trayMenu = new Forms.ContextMenuStrip
         {
             ShowImageMargin = false,
             Font = new System.Drawing.Font("Microsoft YaHei UI", 9F)
         };
+        var disconnectItem = new Forms.ToolStripMenuItem("断开连接");
+        disconnectItem.Click += (_, _) => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (DataContext is MainViewModel vm && vm.LinkIsConnected)
+                vm.LinkService.Disconnect();
+        }));
+        trayMenu.Items.Add(disconnectItem);
+        trayMenu.Opening += (_, _) =>
+            disconnectItem.Enabled = DataContext is MainViewModel vm && vm.LinkIsConnected;
+        trayMenu.Items.Add(new Forms.ToolStripSeparator());
+
         var exportItem = new Forms.ToolStripMenuItem("导出连接诊断…");
         exportItem.Click += (_, _) => Dispatcher.BeginInvoke(new Action(ExportConnectionDiag));
         trayMenu.Items.Add(exportItem);

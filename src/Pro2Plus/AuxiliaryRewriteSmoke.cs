@@ -5286,6 +5286,8 @@ public static class AuxiliaryRewriteSmoke
 
         check("small", "run value name", LaunchAtLoginEntry.Quote(@"C:\x\Pro2+.exe") == "\"C:\\x\\Pro2+.exe\"",
             ref cases, ref bad);
+        check("small", "startup display name", LaunchAtLoginEntry.ValueName == "Pro2+",
+            ref cases, ref bad);
 
         // 自启必须带上 --tray，否则登录时会弹出主界面。
         check("small", "run value tray arg",

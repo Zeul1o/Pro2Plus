@@ -11,7 +11,9 @@ namespace Pro2Plus;
 public static class LaunchAtLoginEntry
 {
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string ValueName = "Pro2Plus";
+    // 任务管理器的「启动」页显示的就是这个值名，用产品名而不是项目名。
+    internal const string ValueName = "Pro2+";
+    private const string LegacyValueName = "Pro2Plus";
 
     /// <summary>自启时一并写入的参数：进程起来后只保留托盘图标，不弹主界面。</summary>
     internal const string TrayStartArgument = "--tray";
@@ -21,7 +23,8 @@ public static class LaunchAtLoginEntry
         try
         {
             using RegistryKey? key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: false);
-            return key?.GetValue(ValueName) is string value && !string.IsNullOrWhiteSpace(value);
+            if (key is null) return false;
+            return IsUsable(key.GetValue(ValueName)) || IsUsable(key.GetValue(LegacyValueName));
         }
         catch
         {
@@ -37,11 +40,17 @@ public static class LaunchAtLoginEntry
         if (!enabled)
         {
             key.DeleteValue(ValueName, throwOnMissingValue: false);
+            key.DeleteValue(LegacyValueName, throwOnMissingValue: false);
             return;
         }
 
         key.SetValue(ValueName, BuildRunValue(ResolveExecutable()), RegistryValueKind.String);
+        // 老版本写的是项目名；不清掉会在「启动」页出现两条 Pro2+。
+        key.DeleteValue(LegacyValueName, throwOnMissingValue: false);
     }
+
+    private static bool IsUsable(object? value) =>
+        value is string text && !string.IsNullOrWhiteSpace(text);
 
     /// <summary>Run 键里要写的完整命令：带引号的 exe 路径 + 托盘启动参数。</summary>
     internal static string BuildRunValue(string executablePath) =>

@@ -201,6 +201,8 @@ public sealed class Pro2ConnectionService : IDisposable
                 }
 
                 _userDisconnected = false;
+                // 插着线时监听是停的；拔掉线后自动连接要重新盯住手柄广播。
+                if (autoConnectOnPairing) EnsurePairingWatch();
                 return;
             }
 
@@ -648,6 +650,22 @@ public sealed class Pro2ConnectionService : IDisposable
         if (previous == Pro2LinkKind.Bluetooth)
         {
             ScheduleBluetoothRetry(reason);
+        }
+        else if (previous == Pro2LinkKind.Wired)
+        {
+            // 有线会话期间监听必然是停的（MarkConnected 里停的）。
+            // 拔线后要让配对监听重新跑起来，否则只能手动点连接。
+            // 这里不能等 _linkCloseTask —— 本回调可能就在那个任务里执行。
+            if (autoConnectOnPairing && !_userDisconnected)
+            {
+                _ = Task.Run(async () =>
+                {
+                    try { await Task.Delay(600).ConfigureAwait(false); }
+                    catch { return; }
+                    if (_disposed || IsConnected || !autoConnectOnPairing || _userDisconnected) return;
+                    EnsurePairingWatch();
+                });
+            }
         }
     }
 
