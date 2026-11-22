@@ -289,10 +289,11 @@ public sealed class Pro2BleLink : IDisposable
                 await Task.WhenAny(ack.Task, Task.Delay(400, token)).ConfigureAwait(false);
             }
 
-            // 旧版的顺序不能改：先读一次电量，再写报告率，最后订阅 FD2。
-            // 电量只能「读一次」——把 legacy 特征也订阅上会把手柄的推送
-            // 切到旧报告流，FD2 从此不再出帧（表现就是回报率 0）。
-            await ReadBatteryOnceAsync(_legacy, token).ConfigureAwait(false);
+            // 旧版的顺序不能改：先取一次电量，再写报告率，最后订阅 FD2。
+            // 直读常被手柄以 ProtocolError 拒绝；这时在 FD2 还没推流之前
+            // 短暂订阅 legacy 收一帧 0x09，拿到就立刻退订，不跟 FD2 抢无线电。
+            if (!await ReadBatteryOnceAsync(_legacy, token).ConfigureAwait(false))
+                await ReadBatteryByNotifyBeforeFd2Async(_legacy, token).ConfigureAwait(false);
 
             // FD2 默认不推流（或只推一帧）。必须先写它的自定义报告率
             // 描述符，把手柄切到 133Hz 周期上报。
@@ -462,9 +463,9 @@ public sealed class Pro2BleLink : IDisposable
     /// 只在连接时读一次电量。legacy 特征大多没开 Read 权限，
     /// 读失败是常态，真正的电量走 0x09 通知。
     /// </summary>
-    private async Task ReadBatteryOnceAsync(GattCharacteristic? legacy, CancellationToken token)
+    private async Task<bool> ReadBatteryOnceAsync(GattCharacteristic? legacy, CancellationToken token)
     {
-        if (legacy is null) return;
+        if (legacy is null) return false;
 
         try
         {
@@ -476,8 +477,8 @@ public sealed class Pro2BleLink : IDisposable
             if (read.Status != GattCommunicationStatus.Success)
             {
                 Log?.Invoke("[BLE] battery_read status=" + read.Status +
-                            " fallback=legacy_notify");
-                return;
+                            " fallback=legacy_notify_once");
+                return false;
             }
 
             byte[] payload = ReadBufferValue(read.Value);
@@ -491,15 +492,80 @@ public sealed class Pro2BleLink : IDisposable
                 bool charging = (rawPower & 0x02) != 0;
                 Interlocked.Increment(ref _legacyCount);
                 BatteryChanged?.Invoke(level <= 9 ? level : -1, charging);
+                return true;
             }
+
+            return false;
         }
         catch (OperationCanceledException)
         {
             // 电量是展示项，读不到不影响输入。
+            return false;
         }
         catch (Exception ex)
         {
             Log?.Invoke("[BLE] battery_read_error " + ex.GetType().Name);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 直读失败时，在订阅 FD2 之前短暂订阅 legacy 收一帧 0x09 电量，
+    /// 拿到（或超时）就立刻退订。FD2 这时还没开始推流，因此不会重演
+    /// 「订阅 legacy 抢走 FD2 → 回报率归零」的问题。
+    /// </summary>
+    private async Task ReadBatteryByNotifyBeforeFd2Async(
+        GattCharacteristic? legacy, CancellationToken token)
+    {
+        if (legacy is null || _closing) return;
+
+        var got = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        void Handler(GattCharacteristic sender, GattValueChangedEventArgs args)
+        {
+            byte[] payload = ReadBuffer(args);
+            if (payload.Length < 2 || payload[0] != 0x09) return;
+            OnLegacyValueChanged(sender, args);
+            got.TrySetResult(true);
+        }
+
+        legacy.ValueChanged += Handler;
+        bool subscribed = false;
+        try
+        {
+            subscribed = await SubscribeAsync(legacy, token).ConfigureAwait(false);
+            if (!subscribed)
+            {
+                Log?.Invoke("[BLE] battery_notify_once subscribe_failed");
+                return;
+            }
+
+            await Task.WhenAny(got.Task, Task.Delay(1200, token)).ConfigureAwait(false);
+            Log?.Invoke("[BLE] battery_notify_once got=" + got.Task.IsCompletedSuccessfully);
+        }
+        catch (OperationCanceledException)
+        {
+            // 连接被用户取消：下面的 finally 仍然会退订。
+        }
+        catch (Exception ex)
+        {
+            Log?.Invoke("[BLE] battery_notify_once_error " + ex.GetType().Name);
+        }
+        finally
+        {
+            try { legacy.ValueChanged -= Handler; } catch { }
+            if (subscribed)
+            {
+                try
+                {
+                    await legacy.WriteClientCharacteristicConfigurationDescriptorAsync(
+                        GattClientCharacteristicConfigurationDescriptorValue.None)
+                        .AsTask(token).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // 退订失败由后续 DropLegacyBattery 兜底，不阻断连接。
+                }
+            }
         }
     }
 

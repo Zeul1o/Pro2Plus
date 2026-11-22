@@ -746,6 +746,9 @@ public sealed class Pro2ConnectionService : IDisposable
             autoConnectOnPairing = value;
             if (value)
             {
+                // 之前点过「断开连接」会留下 _userDisconnected；
+                // 现在显式打开自动连接，就该立刻恢复监听。
+                _userDisconnected = false;
                 Interlocked.Exchange(ref pairingRetryNotBefore, 0);
                 EnsurePairingWatch();
             }
@@ -867,6 +870,24 @@ public sealed class Pro2ConnectionService : IDisposable
         Publish(Pro2LinkKind.None, Pro2LinkPhase.Idle, "未连接",
             "插上 USB 线，或让手柄进入蓝牙配对");
         BeginCloseQuietly();
+
+        // 用户开了「配对时自动连接」时，主动断开只表示结束本次会话，
+        // 不代表退出监听。等链路关干净再恢复，否则会和新连接抢同一块无线电。
+        if (autoConnectOnPairing && !_disposed) _ = ResumePairingWatchAfterCloseAsync();
+    }
+
+    private async Task ResumePairingWatchAfterCloseAsync()
+    {
+        try { await WaitLinkClosedAsync().ConfigureAwait(false); }
+        catch { }
+        if (_disposed || !autoConnectOnPairing || IsConnected) return;
+
+        // Disconnect 为了防止自动重连抢占，把 _userDisconnected 置了 true；
+        // 既然自动连接还开着，这里必须清掉，否则监听起得来、命中后也不会连。
+        _userDisconnected = false;
+        Interlocked.Exchange(ref pairingRetryNotBefore, 0);
+        EnsurePairingWatch();
+        Log?.Invoke("[LINK] ble_pairing_watch=resumed_after_manual_disconnect");
     }
 
     /// <summary>
@@ -918,8 +939,16 @@ public sealed class Pro2ConnectionService : IDisposable
 
     private void BeginCloseQuietly()
     {
-        Task task = Task.Run(CloseLinkQuietly);
-        lock (_closeTaskGate) _linkCloseTask = task;
+        // 先把「正在关」这件事登记好再启动任务：否则紧接着的
+        // WaitLinkClosedAsync 可能看到上一轮的 CompletedTask，提前放行，
+        // 让自动连接和新链路和还没关干净的老链路抢同一个适配器。
+        var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        lock (_closeTaskGate) _linkCloseTask = done.Task;
+        _ = Task.Run(() =>
+        {
+            try { CloseLinkQuietly(); }
+            finally { done.TrySetResult(); }
+        });
     }
 
     private async Task WaitLinkClosedAsync()
