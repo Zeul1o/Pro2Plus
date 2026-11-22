@@ -151,6 +151,8 @@ publish.ps1             一键打包
 - 蓝牙（BLE）输入链路与连接调优：设备发现、连接参数协商、7.5 ms 参数策略、速率诊断、电量与充电状态解码
 - 触觉反馈与体感：DualSense HID 触觉反馈、HD 震动回传、震动队列与节拍、IMU 体感管道
 
+上述文件均已在原文件基础上修改（命名空间由 `Y700Switch2V60Viiper` 改为 `Pro2Plus`，并按需重写），改动声明见 [`NOTICE`](NOTICE)。
+
 第三方组件：Viiper（GPL-3.0）、usbip-win2（BSD-2-Clause）、libusb（LGPL-2.1），许可证原文见 `licenses/`。
 
 Viiper 以独立可执行文件随包分发，由本程序以子进程方式启动、经本机端口通信，不与本项目源码链接或合并，属聚合分发，因此不影响本项目源码的 Apache-2.0 授权。

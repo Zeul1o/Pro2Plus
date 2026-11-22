@@ -12,6 +12,12 @@ Parts carried over from that project:
   - Haptics and motion: DualSense HID haptic feedback, HD rumble passthrough,
     rumble queue and pacing, IMU motion pipeline
 
+Modifications (Apache License 2.0, section 4(b)):
+Every file carrying the code above has been modified, not copied verbatim. The
+namespace was changed from Y700Switch2V60Viiper to Pro2Plus in all of them, and
+they were rewritten in place while keeping the upstream structure and protocol
+handling. Everything else in this repository is this project's own code.
+
 Third-party components keep their own licenses:
   - Viiper (GPL-3.0)      https://github.com/Alia5/VIIPER
   - usbip-win2 (BSD-2-Clause)  https://github.com/vadimgrn/usbip-win2

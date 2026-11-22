@@ -151,6 +151,8 @@ This project is based on [LeonChrome/XinHeLianSheng-Pro2-Bridge](https://github.
 - Bluetooth (BLE) input and connection tuning: device discovery, connection-parameter negotiation, 7.5 ms policy, rate diagnostics, battery and charge-state decoding
 - Haptics and motion: DualSense HID haptic feedback, HD rumble passthrough, rumble queue and pacing, IMU motion pipeline
 
+Those files are all modified from the originals (namespace changed from `Y700Switch2V60Viiper` to `Pro2Plus`, rewritten as needed); the change statement is in [`NOTICE`](NOTICE).
+
 Third-party components: Viiper (GPL-3.0), usbip-win2 (BSD-2-Clause) and libusb (LGPL-2.1) — full texts in `licenses/`.
 
 Viiper is distributed as a separate executable and launched by this program as a child process, communicating over a local port. It is neither linked nor combined with this project's source, so it is mere aggregation and does not affect the Apache-2.0 licensing of this project.
