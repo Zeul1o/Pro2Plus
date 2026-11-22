@@ -67,6 +67,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
     private bool shuttingDown;
     private bool autoReconnectEnabled;
     private bool launchAtLoginEnabled;
+    private bool autoConnectOnPairingEnabled;
     private bool autoReconnectOnStartupEnabled;
     private bool startupAutomationActive;
     private bool startupAutomationPaused;
@@ -231,6 +232,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
             StickProcessingOption.FromLabel(userSettings.StickProcessingLabel).Label;
         runtimeBatteryRefreshEnabled = userSettings.RuntimeBatteryRefreshEnabled;
         launchAtLoginEnabled = !previewOnly && userSettings.LaunchAtLoginEnabled && LaunchAtLoginEntry.IsEnabled();
+        autoConnectOnPairingEnabled = userSettings.AutoConnectOnPairingEnabled;
+        linkService.AutoConnectOnPairing = autoConnectOnPairingEnabled;
         autoReconnectOnStartupEnabled = userSettings.AutoReconnectOnStartupEnabled;
         if (launchAtLoginEnabled)
         {
@@ -414,6 +417,25 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
 
             OnPropertyChanged();
             OnPropertyChanged(nameof(StartupAutomationSummary));
+        }
+    }
+
+    /// <summary>
+    /// 常驻监听广播：手柄长按 2 秒进入配对模式后自动连接。
+    /// 只在未连接时扫描，连上立刻停——扫描会抢走维持 7.5 ms 连接间隔所需的无线电时间。
+    /// </summary>
+    public bool AutoConnectOnPairingEnabled
+    {
+        get => autoConnectOnPairingEnabled;
+        set
+        {
+            if (autoConnectOnPairingEnabled == value) return;
+            autoConnectOnPairingEnabled = value;
+            userSettings.AutoConnectOnPairingEnabled = value;
+            linkService.AutoConnectOnPairing = value;
+            SaveUserSettings("[STARTUP]");
+            AppendLog("[STARTUP] auto_connect_on_pairing=" + value);
+            OnPropertyChanged();
         }
     }
 

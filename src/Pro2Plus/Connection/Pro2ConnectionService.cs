@@ -250,6 +250,7 @@ public sealed class Pro2ConnectionService : IDisposable
         _connectCts?.Dispose();
         var cts = new CancellationTokenSource();
         _connectCts = cts;
+        StopPairingWatch();
 
         try
         {
@@ -278,6 +279,9 @@ public sealed class Pro2ConnectionService : IDisposable
             Publish(Pro2LinkKind.None, Pro2LinkPhase.Failed,
                 "连接失败", DescribeException(ex));
         }
+
+        // 没连上就回到常驻监听：用户可能只是还没长按配对键。
+        if (!IsConnected) EnsurePairingWatch();
     }
 
     private async Task ConnectWiredAsync(CancellationToken token)
@@ -534,6 +538,7 @@ public sealed class Pro2ConnectionService : IDisposable
 
         _userDisconnected = false;
         Interlocked.Exchange(ref _bleAutoRetries, 0);
+        StopPairingWatch();
         Publish(kind, Pro2LinkPhase.Ready, title, detail);
 
         if (kind == Pro2LinkKind.Bluetooth)
@@ -727,6 +732,118 @@ public sealed class Pro2ConnectionService : IDisposable
     private double _rateHz;
     private long _lastBleTelemetryTicks;
 
+    // ── 配对监听：手柄长按 2 秒进配对后自动连接 ──────────────────────
+    private BlePairingWatch? pairingWatch;
+    private long pairingRetryNotBefore;
+    private bool autoConnectOnPairing;
+
+    public bool AutoConnectOnPairing
+    {
+        get => autoConnectOnPairing;
+        set
+        {
+            if (autoConnectOnPairing == value) return;
+            autoConnectOnPairing = value;
+            if (value)
+            {
+                Interlocked.Exchange(ref pairingRetryNotBefore, 0);
+                EnsurePairingWatch();
+            }
+            else
+            {
+                StopPairingWatch();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 只在「未连接 + 用户开着这个功能 + 不在冷却期」时扫。
+    /// 扫描和连接共用同一块无线电，连上还扫会把 7.5ms 间隔拉坏。
+    /// </summary>
+    private void EnsurePairingWatch()
+    {
+        if (_disposed || _userDisconnected || !autoConnectOnPairing || IsConnected) return;
+        if (pairingWatch?.IsRunning == true) return;
+        if (Stopwatch.GetTimestamp() < Interlocked.Read(ref pairingRetryNotBefore)) return;
+
+        ulong saved = BleAddressStore.TryLoad(out Pro2BleCandidate candidate) ? candidate.Address : 0;
+        var watch = new BlePairingWatch(saved, OnPairingCandidate);
+        if (!watch.Start())
+        {
+            watch.Dispose();
+            Log?.Invoke("[LINK] ble_pairing_watch=start_failed");
+            return;
+        }
+
+        pairingWatch = watch;
+        Log?.Invoke("[LINK] ble_pairing_watch=start saved=" + saved.ToString("X12"));
+    }
+
+    private void StopPairingWatch()
+    {
+        BlePairingWatch? current = pairingWatch;
+        pairingWatch = null;
+        if (current is null) return;
+        current.Dispose();
+        Log?.Invoke("[LINK] ble_pairing_watch=stop");
+    }
+
+    private void OnPairingCandidate(Pro2BleCandidate candidate)
+    {
+        Log?.Invoke("[LINK] ble_pairing_watch=hit addr=" + candidate.Address.ToString("X12") +
+                    " rssi=" + candidate.Rssi + " name=\"" + candidate.Name + "\"");
+        _ = Task.Run(() => ConnectFromPairingAsync(candidate));
+    }
+
+    private async Task ConnectFromPairingAsync(Pro2BleCandidate candidate)
+    {
+        if (_disposed || _userDisconnected || IsConnected) return;
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
+        try
+        {
+            // 把可能还在跑的连接流程顶掉，避免两个 OpenAsync 抢同一个适配器。
+            try { _connectCts?.Cancel(); } catch { }
+            _connectCts?.Dispose();
+            _connectCts = cts;
+
+            Publish(Pro2LinkKind.Bluetooth, Pro2LinkPhase.Opening, "正在连接…",
+                string.IsNullOrWhiteSpace(candidate.Name) ? "手柄已进入配对" : candidate.Name);
+
+            (bool ok, string detail) =
+                await _ble.OpenAsync(candidate, cts.Token).ConfigureAwait(false);
+            if (!ok)
+            {
+                Log?.Invoke("[LINK] ble_pairing_connect_fail " + detail);
+                ConnectionDiag.Warn("ble_pairing_connect_fail detail=\"" + detail + "\"");
+                Publish(Pro2LinkKind.None, Pro2LinkPhase.Failed, "未连接", detail);
+                await RetryPairingWatchAsync().ConfigureAwait(false);
+                return;
+            }
+
+            await CompleteBluetoothConnectAsync(candidate, cts.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            await RetryPairingWatchAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Log?.Invoke("[LINK] ble_pairing_connect_error " + ex.GetType().Name);
+            await RetryPairingWatchAsync().ConfigureAwait(false);
+        }
+    }
+
+    private async Task RetryPairingWatchAsync()
+    {
+        // 手柄停在配对态会持续广播：失败后必须歇一会儿，否则变成连续重连。
+        Interlocked.Exchange(ref pairingRetryNotBefore,
+            Stopwatch.GetTimestamp() + (long)(30 * Stopwatch.Frequency));
+        try { await Task.Delay(TimeSpan.FromSeconds(30)).ConfigureAwait(false); }
+        catch { return; }
+        EnsurePairingWatch();
+    }
+
     // 最近一次读到的电量档位（-1 表示未知）。连接期的读数在 Ready 之前就要落在这里，
     // 否则 Publish 会把它当「非 Ready」丢掉。
     private int _pendingBattery = -1;
@@ -738,6 +855,7 @@ public sealed class Pro2ConnectionService : IDisposable
         _connectCts?.Cancel();
 
         DropInputSession();
+        StopPairingWatch();
         Publish(Pro2LinkKind.None, Pro2LinkPhase.Idle, "未连接",
             "插上 USB 线，或让手柄进入蓝牙配对");
         BeginCloseQuietly();
@@ -762,6 +880,7 @@ public sealed class Pro2ConnectionService : IDisposable
         _closingLink = true;
         try
         {
+            StopPairingWatch();
             _wired.Close();
             _ble.Close();
         }
@@ -921,6 +1040,7 @@ public sealed class Pro2ConnectionService : IDisposable
     public void Dispose()
     {
         _disposed = true;
+        StopPairingWatch();
         _usbWatch?.Dispose();
         _usbWatch = null;
         _connectCts?.Cancel();

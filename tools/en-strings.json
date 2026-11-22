@@ -267,5 +267,8 @@
   "开机自启": "Launch at login",
   "登录 Windows 后自动启动，直接收进托盘，不弹主界面": "Start with Windows and go straight to the tray, without a main window",
   "关闭窗口即退出；最小化只收进托盘。托盘图标左键打开主界面，右键可导出连接诊断或退出。": "Closing the window quits; minimizing only hides it to the tray. Left-click the tray icon to open the main window, right-click to export diagnostics or quit.",
-  "写入当前用户的启动项（HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run）": "Writes the per-user startup entry (HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run)"
+  "写入当前用户的启动项（HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run）": "Writes the per-user startup entry (HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run)",
+  "配对时自动连接": "Auto-connect on pairing",
+  "手柄长按 2 秒进入配对后自动连上，不必回主界面点连接": "Hold the controller for 2 seconds to enter pairing and it connects by itself, without going back to the main window",
+  "只在未连接时扫描广播，连上后立即停止，不占用 7.5 ms 回报率所需的无线电时间": "Scans only while disconnected and stops as soon as the link is up, keeping the radio free for the 7.5 ms report rate"
 }

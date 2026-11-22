@@ -43,6 +43,8 @@ public sealed class AppSettings
     public string SelectedModeKey { get; set; } = "pro2";
     public RearKeyConfiguration RearButtons { get; set; } = new();
     public bool LaunchAtLoginEnabled { get; set; }
+    /// <summary>常驻监听广播，手柄进入配对模式（长按 2 秒）就自动连接。</summary>
+    public bool AutoConnectOnPairingEnabled { get; set; }
     public bool AutoReconnectOnStartupEnabled { get; set; }
     public string[] LastConnectedPro2Addresses { get; set; } = new string[4];
     public bool[] EnabledPro2Slots { get; set; } = [true, false, false, false];

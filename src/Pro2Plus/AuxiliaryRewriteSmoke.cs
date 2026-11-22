@@ -5288,6 +5288,18 @@ public static class AuxiliaryRewriteSmoke
         check("small", "run value tray arg trim",
             LaunchAtLoginEntry.BuildRunValue("  \"C:\\a b\\Pro2+.exe\"  ") == "\"C:\\a b\\Pro2+.exe\" --tray",
             ref cases, ref bad);
+
+        // 配对监听判据：有保存地址时只认该地址，没有才按名字退化。
+        check("pairing", "saved address wins",
+            BlePairingWatchPolicy.Accepts(0xA1B2C3, 0xA1B2C3, ""), ref cases, ref bad);
+        check("pairing", "other address rejected",
+            !BlePairingWatchPolicy.Accepts(0xA1B2C4, 0xA1B2C3, "Pro Controller"), ref cases, ref bad);
+        check("pairing", "no saved accepts pro name",
+            BlePairingWatchPolicy.Accepts(0x11, 0, "Pro Controller"), ref cases, ref bad);
+        check("pairing", "no saved rejects other name",
+            !BlePairingWatchPolicy.Accepts(0x11, 0, "Joy-Con (L)"), ref cases, ref bad);
+        check("pairing", "no saved rejects empty name",
+            !BlePairingWatchPolicy.Accepts(0x11, 0, ""), ref cases, ref bad);
     }
 
     private static string LegacyQuote(string path) => "\"" + path.Trim().Trim('"') + "\"";

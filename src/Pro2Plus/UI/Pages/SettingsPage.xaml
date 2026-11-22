@@ -81,10 +81,10 @@
                       VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled"
                       PanningMode="VerticalOnly" Background="Transparent"
                       ScrollChanged="ContentScroll_ScrollChanged">
-            <Canvas Width="764" Height="1158" HorizontalAlignment="Left">
+            <Canvas Width="764" Height="1220" HorizontalAlignment="Left">
             <!-- 顶部留白：抵消滚动区上延的 38px，首屏卡片仍在原位 -->
             <Rectangle Canvas.Left="0" Canvas.Top="0" Width="764" Height="38" Fill="Transparent"/>
-            <Canvas Canvas.Left="0" Canvas.Top="38" Width="764" Height="1120">
+            <Canvas Canvas.Left="0" Canvas.Top="38" Width="764" Height="1182">
 
         <!-- ═══════ 设备校准 788×320 ═══════ -->
         <ContentControl Style="{StaticResource Card}" Canvas.Left="0" Canvas.Top="0" Width="764" Height="320">
@@ -341,7 +341,7 @@
         </ContentControl>
 
         <!-- ═══════ 启动 764×148 ═══════ -->
-        <ContentControl Style="{StaticResource Card}" Canvas.Left="0" Canvas.Top="968" Width="764" Height="148">
+        <ContentControl Style="{StaticResource Card}" Canvas.Left="0" Canvas.Top="968" Width="764" Height="210">
             <Canvas>
                 <TextBlock Canvas.Left="28" Canvas.Top="19" Text="启动" FontSize="10.5"
                            Foreground="{StaticResource T4}" LineHeight="15"/>
@@ -355,8 +355,17 @@
                           ToolTip="写入当前用户的启动项（HKCU\Software\Microsoft\Windows\CurrentVersion\Run）"
                           IsChecked="{Binding LaunchAtLoginEnabled, Mode=TwoWay}"/>
 
-                <Rectangle Canvas.Left="28" Canvas.Top="102" Width="708" Height="1" Fill="#14FFFFFF"/>
-                <TextBlock Canvas.Left="28" Canvas.Top="114" FontSize="11" LineHeight="16"
+                <TextBlock Canvas.Left="28" Canvas.Top="104" Text="配对时自动连接" FontSize="12"
+                           Foreground="{StaticResource T1}" LineHeight="18" Width="320"/>
+                <TextBlock Canvas.Left="28" Canvas.Top="125" FontSize="11.5" LineHeight="17" Width="620"
+                           Foreground="{StaticResource T4}"
+                           Text="手柄长按 2 秒进入配对后自动连上，不必回主界面点连接"/>
+                <CheckBox Canvas.Left="694" Canvas.Top="105" Style="{StaticResource Switch}"
+                          ToolTip="只在未连接时扫描广播，连上后立即停止，不占用 7.5 ms 回报率所需的无线电时间"
+                          IsChecked="{Binding AutoConnectOnPairingEnabled, Mode=TwoWay}"/>
+
+                <Rectangle Canvas.Left="28" Canvas.Top="160" Width="708" Height="1" Fill="#14FFFFFF"/>
+                <TextBlock Canvas.Left="28" Canvas.Top="172" FontSize="11" LineHeight="16"
                            Foreground="{StaticResource T4}" TextWrapping="Wrap" Width="708"
                            Text="关闭窗口即退出；最小化只收进托盘。托盘图标左键打开主界面，右键可导出连接诊断或退出。"/>
             </Canvas>
