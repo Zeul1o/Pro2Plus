@@ -86,7 +86,7 @@
                            HorizontalAlignment="Left" VerticalAlignment="Center"
                            FontSize="11.5" Foreground="{StaticResource T2}"/>
             </Grid>
-            <TextBlock x:Name="VersionText" Text="v1.0.0" HorizontalAlignment="Left" VerticalAlignment="Top"
+            <TextBlock x:Name="VersionText" Text="v1.0.1" HorizontalAlignment="Left" VerticalAlignment="Top"
                        Margin="24,786,0,0" FontSize="10.5" Foreground="{StaticResource T4}"
                        IsHitTestVisible="False"/>
 
