@@ -153,7 +153,9 @@ publish.ps1             一键打包
 
 第三方组件：Viiper（GPL-3.0）、usbip-win2（BSD-2-Clause）、libusb（LGPL-2.1），许可证原文见 `licenses/`。
 
-Viiper 以独立可执行文件随包分发，由本程序以子进程方式启动、经本机端口通信，不与本项目源码链接或合并，属聚合分发，因此不影响本项目源码的 Apache-2.0 授权。Viiper 对应源码见 https://github.com/Alia5/VIIPER 。
+Viiper 以独立可执行文件随包分发，由本程序以子进程方式启动、经本机端口通信，不与本项目源码链接或合并，属聚合分发，因此不影响本项目源码的 Apache-2.0 授权。
+
+随包的 `viiper-haptic-v2.8.exe` 是上游项目基于 VIIPER 改造的构建（SHA-256 `F434E356…7FEBFC`），其对应源码位于上游仓库 `source/final-three-in-one/tools/viiper/haptic-src`（标签 `pro2-v3.2.7`）；VIIPER 上游源码见 https://github.com/Alia5/VIIPER 。
 
 上游项目与本项目无隶属关系，也未对本项目作任何背书。
 

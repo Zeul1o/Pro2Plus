@@ -23,7 +23,12 @@ above.
 
 Viiper is shipped as a separate executable and run as a child process over a
 local port; it is not linked or combined with this project's source, so it is
-mere aggregation and does not change the licensing of this project. Its
-corresponding source is available at the Viiper repository above.
+mere aggregation and does not change the licensing of this project.
+
+The shipped viiper-haptic-v2.8.exe is a modified build derived from VIIPER by
+the upstream project (SHA-256 F434E356...7FEBFC). Per GPL-3.0 section 6, its
+corresponding source is the upstream repository's
+source/final-three-in-one/tools/viiper/haptic-src at tag pro2-v3.2.7, not the
+pristine VIIPER release.
 
 The upstream project is not affiliated with this project and does not endorse it.

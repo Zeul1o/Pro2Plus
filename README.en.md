@@ -153,7 +153,9 @@ This project is based on [LeonChrome/XinHeLianSheng-Pro2-Bridge](https://github.
 
 Third-party components: Viiper (GPL-3.0), usbip-win2 (BSD-2-Clause) and libusb (LGPL-2.1) — full texts in `licenses/`.
 
-Viiper is distributed as a separate executable and launched by this program as a child process, communicating over a local port. It is neither linked nor combined with this project's source, so it is mere aggregation and does not affect the Apache-2.0 licensing of this project. Viiper's corresponding source: https://github.com/Alia5/VIIPER .
+Viiper is distributed as a separate executable and launched by this program as a child process, communicating over a local port. It is neither linked nor combined with this project's source, so it is mere aggregation and does not affect the Apache-2.0 licensing of this project.
+
+The bundled `viiper-haptic-v2.8.exe` is a modified build derived from VIIPER by the upstream project (SHA-256 `F434E356…7FEBFC`). Its corresponding source is the upstream repository's `source/final-three-in-one/tools/viiper/haptic-src` at tag `pro2-v3.2.7`; upstream VIIPER source: https://github.com/Alia5/VIIPER .
 
 The upstream project is not affiliated with this one and does not endorse it.
 
