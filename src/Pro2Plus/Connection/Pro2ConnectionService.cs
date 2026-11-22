@@ -607,6 +607,9 @@ public sealed class Pro2ConnectionService : IDisposable
     {
         lock (_gate)
         {
+            // 连接期（Ready 之前）读到的一次电量先存住，MarkConnected 发布 Ready 时再用。
+            _pendingBattery = level;
+            _pendingCharging = charging;
             if (_snapshot.Phase != Pro2LinkPhase.Ready) return;
             _snapshot = _snapshot with { BatterySteps = level, Charging = charging };
         }
@@ -724,6 +727,11 @@ public sealed class Pro2ConnectionService : IDisposable
     private double _rateHz;
     private long _lastBleTelemetryTicks;
 
+    // 最近一次读到的电量档位（-1 表示未知）。连接期的读数在 Ready 之前就要落在这里，
+    // 否则 Publish 会把它当「非 Ready」丢掉。
+    private int _pendingBattery = -1;
+    private bool _pendingCharging;
+
     public void Disconnect()
     {
         _userDisconnected = true;
@@ -770,6 +778,8 @@ public sealed class Pro2ConnectionService : IDisposable
         Interlocked.Exchange(ref _firstReportLogged, 0);
         _rateSampleTicks = 0;
         _rateHz = 0;
+        _pendingBattery = -1;
+        _pendingCharging = false;
     }
 
 
@@ -800,7 +810,12 @@ public sealed class Pro2ConnectionService : IDisposable
                             " interval=" + _ble.IntervalStatus);
             }
 
-            await EnableBatteryNotifyAsync(measured).ConfigureAwait(false);
+            // 默认不再订阅 legacy 电量通知。实测这条订阅会把这台手柄的推送切到旧报告流，
+            // FD2 随即停推：界面上就是「回报率已经到 125，然后归零，电量这时出现，之后才回升」。
+            // 电量改由连接期的一次读取 + 每 10 分钟的 RuntimeBattery 探测提供，
+            // 两者都不与 FD2 抢流。诊断需要时用 PRO2_BLE_BATTERY_NOTIFY=1 打开。
+            if (EnvironmentSwitches.IsEnabled("PRO2_BLE_BATTERY_NOTIFY"))
+                await EnableBatteryNotifyAsync(measured).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -869,14 +884,19 @@ public sealed class Pro2ConnectionService : IDisposable
     {
         lock (_gate)
         {
+            // 连接期读到的电量发生在 Ready 之前，早期版本会在这里被丢掉，
+            // 于是只能靠「再订阅一次 legacy 通知」补回来——那一步会抢走 FD2 的推送，
+            // 表现为回报率 125 → 0 → 电量出现 → 回升。现在把连接期读数缓存下来，直接沿用。
+            int battery = _pendingBattery >= 0 ? _pendingBattery : _snapshot.BatterySteps;
+            bool charging = _pendingBattery >= 0 ? _pendingCharging : _snapshot.Charging;
             _snapshot = new Pro2LinkSnapshot(
                 kind,
                 phase,
                 title,
                 detail,
                 phase == Pro2LinkPhase.Ready ? _snapshot.RateHz : 0,
-                phase == Pro2LinkPhase.Ready ? _snapshot.BatterySteps : -1,
-                phase == Pro2LinkPhase.Ready && _snapshot.Charging,
+                phase == Pro2LinkPhase.Ready ? battery : -1,
+                phase == Pro2LinkPhase.Ready && charging,
                 phase == Pro2LinkPhase.Failed ? detail : "");
         }
 
